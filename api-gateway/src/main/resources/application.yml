@@ -9,17 +9,27 @@ spring:
       server:
         webflux:
           routes:
-          - id: cliente-service
-            uri: http://localhost:9091
+          - id: user-service
+            uri: http://localhost:8081
             predicates:
-            - Path=/clientes/**
+            - Path=/user/**
 
-          - id: compra-service
-            uri: http://localhost:9092
+          - id: pago-service
+            uri: http://localhost:8082
             predicates:
-            - Path=/compras/**
-          
-          - id: producto-service
-            uri: http://localhost:9093
+            - Path=/pago/**
+
+            - id: evaluaciones-service
+            uri: http://localhost:8084
             predicates:
-            - Path=/productos/**
+            - Path=/evaluaciones/**
+
+            - id: inscripciones-service
+            uri: http://localhost:8085
+            predicates:
+            - Path=/inscripciones/**
+            
+            - id: clases-service
+            uri: http://localhost:9095
+            predicates:
+            - Path=/clases/**
