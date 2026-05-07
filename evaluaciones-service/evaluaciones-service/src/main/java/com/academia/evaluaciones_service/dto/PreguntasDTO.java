@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class PreguntasDTO {
-    private String id_pregunta;
+    private Long id_pregunta;
     private String enunciado;
     private int puntaje;
-    private String id_examen;
+    private Long id_examen;
 
     public Preguntas toModel(){
         return new Preguntas(id_pregunta, enunciado, puntaje, id_examen);
