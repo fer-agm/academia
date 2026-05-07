@@ -12,17 +12,18 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class AlternativasDTO {
+    private Long id_alternativa;
     private String texto;
     private boolean correcto;
-    private String id_pregunta;
+    private Long id_pregunta;
 
     public Alternativas toModel(){
-        return new Alternativas(texto, correcto, id_pregunta);
+        return new Alternativas(id_alternativa, texto, correcto, id_pregunta);
     }
 
     public static AlternativasDTO fromModel(Alternativas a){
         if (a == null) return null;
-        return new AlternativasDTO(a.getTexto(), a.isCorrecto(), a.getId_pregunta());
+        return new AlternativasDTO(a.getId_alternativa(), a.getTexto(), a.isCorrecto(), a.getId_pregunta());
     }   
 
 }
