@@ -3,33 +3,33 @@ server:
 
 spring:
   main:
-      web-application-type: reactive
+    web-application-type: reactive
   cloud:
     gateway:
       server:
         webflux:
           routes:
-          - id: user-service
-            uri: http://localhost:8081
-            predicates:
-            - Path=/user/**
+            - id: user-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/user/**
 
-          - id: pago-service
-            uri: http://localhost:8082
-            predicates:
-            - Path=/pago/**
+            - id: pago-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/pago/**
 
-            - id: evaluaciones-service
-            uri: http://localhost:8084
-            predicates:
-            - Path=/evaluaciones/**
-
-            - id: inscripciones-service
-            uri: http://localhost:8085
-            predicates:
-            - Path=/inscripciones/**
-            
             - id: clases-service
-            uri: http://localhost:9095
-            predicates:
-            - Path=/clases/**
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/cursos/**, /api/categorias/**, /api/clases/**
+                            
+            - id: evaluaciones-service
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/examenes/**, /api/preguntas/**, /api/alternativas/**
+            
+            - id: inscripciones-service
+              uri: http://localhost:8085
+              predicates:
+                - Path=/inscripciones/**
