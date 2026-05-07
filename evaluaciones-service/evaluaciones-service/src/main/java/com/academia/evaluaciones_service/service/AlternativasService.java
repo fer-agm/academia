@@ -1,6 +1,7 @@
 package com.academia.evaluaciones_service.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -16,7 +17,7 @@ public class AlternativasService {
         this.alternativasRepository = alternativasRepository;        
     }
 
-    public List<Alternativas> getAllAlternativas() {
+    public List<Alternativas> getAll() {
         return alternativasRepository.findAll();
     }
 
@@ -27,6 +28,10 @@ public class AlternativasService {
     public void borrar (Long id){
         alternativasRepository.deleteById(id);
     }       
+
+    public Optional<Alternativas> getById(Long id) {
+        return alternativasRepository.findById(id);
+    }
 
 
 

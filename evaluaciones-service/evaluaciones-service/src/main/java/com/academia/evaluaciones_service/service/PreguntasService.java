@@ -1,6 +1,7 @@
 package com.academia.evaluaciones_service.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -17,11 +18,11 @@ public class PreguntasService {
 
 }
 
-public List<Preguntas> getAllPreguntas() {
+public List<Preguntas> getAll() {
     return preguntasRepository.findAll();
 }
 
-public Optional<Preguntas> getPreguntaById(Long id) {
+public Optional<Preguntas> getById(Long id) {
     return preguntasRepository.findById(id);
 }
 

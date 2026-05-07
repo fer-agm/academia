@@ -1,12 +1,12 @@
 package com.academia.evaluaciones_service.service;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 import com.academia.evaluaciones_service.model.Evaluaciones;
 import com.academia.evaluaciones_service.repository.EvaluacionesRepository;
-
-import java.util.List;
-import java.util.Optional;
 
 @Service
 public class EvaluacionesService {
@@ -18,11 +18,11 @@ public class EvaluacionesService {
     }
 
     public List<Evaluaciones> getAllEvaluaciones() {
-        return evaluacionesRepository.getAll();
+        return evaluacionesRepository.findAll();
     }
 
     public Optional<Evaluaciones> getEvaluacionById(Long id) {
-        return evaluacionesRepository.getEvaluacionesById(id);
+        return evaluacionesRepository.findById(id);
     }
 
     public Evaluaciones guardar (Evaluaciones evaluaciones){
