@@ -1,0 +1,173 @@
+drop table usuarios;
+drop table rol;
+
+drop table clases;
+drop table curso;
+drop table categoria;
+
+drop table inscripciones;
+drop table cupos;
+
+drop table pago;
+drop table transacciones;
+
+drop table evaluaciones;
+drop table pregunta;
+drop table alternativas;
+
+-------------------------
+create table usuarios(
+    id_usuario number(12) not null,
+    rut varchar2(10) unique not null,
+    nombre1 varchar2(50) not null,
+    nombre2 varchar2(50),
+    appaterno varchar2(50) not null,
+    apmaterno varchar2(50) not null,
+    clave varchar2(8) not null,
+    email varchar2(50) unique,
+    fecha_registro date not null,
+    rol_usuario number(1) not null,
+    constraint pk_usuarios primary key(id_usuario)
+);
+
+
+create table rol(
+    id_rol number(1) not null,
+    nombre_rol varchar2(24) not null,
+    constraint pk_rol primary key (id_rol)
+);
+
+------
+
+create table clases(
+    id_clase number(12) not null,
+    contenido varchar2(500) not null,
+    id_curso number(12) not null,
+    constraint pk_clases primary key (id_clase)
+);
+    
+create table curso(
+    id_curso number(12) not null,
+    nombre_curso varchar2(35) not null,
+    duracion number(3) not null,
+    descripcion varchar2(500) not null,
+    valor number(7) not null,
+    id_categoria number(12) not null,
+    max_cupos number(2) not null,
+    constraint pk_curso primary key (id_curso)
+);
+
+create table categoria( 
+    id_categoria number(12) not null,
+    nombre_categoria varchar2(35) not null,
+    descripcion varchar2(500) not null,
+    constraint pk_categoria primary key (id_categoria)
+);
+
+------
+
+create table inscripciones(
+    id_inscripcion number(12) not null,
+    id_estudiante number(12) not null,
+    id_curso number(12) not null,
+    fecha_inscripcion date not null,
+    estado varchar2(12),
+    constraint pk_inscripciones primary key (id_inscripcion)
+);
+
+
+------
+
+create table pago(
+    id_pago number(12) not null,
+    id_estudiante number(12) not null,
+    id_curso number(12) not null,
+    monto number(7) not null,
+    estado varchar2(24) not null,
+    fecha date not null,
+    constraint pk_pago primary key (id_pago)
+);
+
+create table transacciones(
+    id_transaccion number(12) not null,
+    id_pago number(12) not null,
+    metodo varchar2(12) not null,
+    fecha date not null,
+    constraint pk_transacciones primary key (id_transaccion)
+);
+
+------
+
+create table evaluaciones(
+    id_evaluaciones number(12) not null,
+    id_curso number(12) not  null,
+    punt_min number(3) not null,
+    punt_max number(3) not null,
+    constraint pk_evaluaciones primary key (id_evaluaciones)
+);
+
+
+create table pregunta(
+    id_pregunta number(12) not null,
+    enunciado varchar2(500) not null,
+    puntaje number(3) not null,
+    id_evaluaciones number(12) not null,
+    constraint pk_pregunta primary key (id_pregunta)
+);
+
+create table alternativas(
+    id_alternativa number(12) not null,
+    texto varchar2(500) not null,
+    correcta number(1),
+    id_pregunta number(12) not null,
+    constraint pk_alternativas primary key (id_alternativa)    
+);
+
+
+
+--------------------------------
+
+alter table usuarios 
+    add constraint fk_usuarios_rol foreign key (rol_usuario)
+        references rol(id_rol);    
+
+alter table clases
+    add constraint fk_clase_curso foreign key (id_curso)
+        references curso (id_curso);
+
+alter table curso
+    add constraint fk_curso_categoria foreign key (id_categoria)
+        references categoria (id_categoria);
+        
+alter table inscripciones
+    add constraint fk_inscripciones_usuarios foreign key (id_estudiante)
+        references usuarios(id_usuario);
+        
+alter table inscripciones 
+    add constraint fk_inscripciones_curso foreign key (id_curso)
+        references curso(id_curso);
+        
+alter table pago
+    add constraint fk_pago_usuario foreign key (id_estudiante)
+        references usuarios(id_usuario);
+        
+alter table pago
+    add constraint fk_pago_curso foreign key (id_curso)
+        references curso (id_curso);        
+                
+alter table transacciones
+    add constraint fk_transacciones_pago foreign key (id_pago)
+        references pago(id_pago);
+
+alter table evaluaciones
+    add constraint fk_evaluaciones_curso foreign key (id_curso)
+        references curso(id_curso);
+
+alter table pregunta 
+    add constraint fk_pregunta_evaluaciones foreign key (id_evaluaciones)
+        references evaluaciones(id_evaluaciones);
+        
+alter table alternativas
+    add constraint fk_alternativas_pregunta foreign key (id_pregunta)
+        references pregunta(id_pregunta);
+        
