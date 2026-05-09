@@ -1,12 +1,19 @@
 package com.academia.evaluaciones_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.academia.evaluaciones_service.model.Alternativas;
 import com.academia.evaluaciones_service.service.AlternativasService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/alternativas")
@@ -39,7 +46,7 @@ public class AlternativasController {
     public ResponseEntity<Alternativas> actualizar(@PathVariable Long id, @RequestBody Alternativas alternativas) {
         return alternativasService.getById(id)
                 .map(existing -> {
-                    alternativas.setId_alternativa(id);
+                    alternativas.setIdAlternativa(id);
                     return ResponseEntity.ok(alternativasService.guardar(alternativas));
                 })
                 .orElse(ResponseEntity.notFound().build());

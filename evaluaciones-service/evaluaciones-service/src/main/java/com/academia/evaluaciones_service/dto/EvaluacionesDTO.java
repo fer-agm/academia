@@ -1,6 +1,7 @@
 package com.academia.evaluaciones_service.dto;
 
 import com.academia.evaluaciones_service.model.Evaluaciones;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,18 +13,18 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class EvaluacionesDTO {
-    private Long id_evaluacion;
-    private Long id_curso;
-    private int punt_min;
-    private int punt_max;
+    private Long idEvaluacion;
+    private Long idCurso;
+    private int puntMin;
+    private int puntMax;
 
     public Evaluaciones toModel(){
-        return new Evaluaciones(id_evaluacion, id_curso, punt_min, punt_max);
+        return new Evaluaciones(idEvaluacion, idCurso, puntMin, puntMax);
     }       
 
     public static EvaluacionesDTO fromModel(Evaluaciones e){
         if (e == null) return null;
-        return new EvaluacionesDTO(e.getId_evaluacion(), e.getId_curso(), e.getPunt_min(), e.getPunt_max());
+        return new EvaluacionesDTO(e.getIdEvaluacion(), e.getIdCurso(), e.getPuntMin(), e.getPuntMax());
     }
 
 

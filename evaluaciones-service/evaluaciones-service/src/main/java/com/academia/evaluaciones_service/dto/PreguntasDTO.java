@@ -1,6 +1,7 @@
 package com.academia.evaluaciones_service.dto;
 
 import com.academia.evaluaciones_service.model.Preguntas;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,18 +13,18 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class PreguntasDTO {
-    private Long id_pregunta;
+    private Long idPregunta;
     private String enunciado;
     private int puntaje;
-    private Long id_evaluacion;
+    private Long idEvaluacion;
 
     public Preguntas toModel(){
-        return new Preguntas(id_pregunta, enunciado, puntaje, id_evaluacion);
+        return new Preguntas(idPregunta, enunciado, puntaje, idEvaluacion);
     }   
 
     public static PreguntasDTO fromModel(Preguntas p){
         if (p == null) return null;
-        return new PreguntasDTO(p.getId_pregunta(), p.getEnunciado(), p.getPuntaje(), p.getId_evaluacion());
+        return new PreguntasDTO(p.getIdPregunta(), p.getEnunciado(), p.getPuntaje(), p.getIdEvaluacion());
     }   
 
 }

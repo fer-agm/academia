@@ -1,12 +1,19 @@
 package com.academia.evaluaciones_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.academia.evaluaciones_service.model.Preguntas;
 import com.academia.evaluaciones_service.service.PreguntasService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/preguntas")
@@ -39,7 +46,7 @@ public class PreguntasController {
     public ResponseEntity<Preguntas> actualizar(@PathVariable Long id, @RequestBody Preguntas preguntas) {
         return preguntasService.getById(id)
                 .map(existing -> {
-                    preguntas.setId_pregunta(id);
+                    preguntas.setIdPregunta(id);
                     return ResponseEntity.ok(preguntasService.guardar(preguntas));
                 })
                 .orElse(ResponseEntity.notFound().build());

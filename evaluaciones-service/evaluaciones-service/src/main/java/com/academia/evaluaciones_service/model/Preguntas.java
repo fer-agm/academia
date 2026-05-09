@@ -17,10 +17,10 @@ import lombok.NoArgsConstructor;
 public class Preguntas {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id_pregunta;
+    private Long idPregunta;
     private String enunciado;
     private int puntaje;
-    private Long id_examen;
+    private Long idEvaluacion;
 
 
 }
