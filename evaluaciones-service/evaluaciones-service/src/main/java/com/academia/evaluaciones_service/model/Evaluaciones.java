@@ -18,10 +18,10 @@ public class Evaluaciones {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id_evaluacion;
-    private Long id_curso;
-    private int punt_min;
-    private int punt_max;
+    private Long idEvaluacion;
+    private Long idCurso;
+    private int puntMin;
+    private int puntMax;
 
 
 }

@@ -45,7 +45,7 @@ public class EvaluacionesController {
     public ResponseEntity<Evaluaciones> actualizar(@PathVariable Long id, @RequestBody Evaluaciones evaluaciones) {
         return evaluacionesService.getEvaluacionById(id)
                 .map(existing -> {
-                    evaluaciones.setId_evaluacion(id);
+                    evaluaciones.setIdEvaluacion(id);
                     return ResponseEntity.ok(evaluacionesService.guardar(evaluaciones));
                 })
                 .orElse(ResponseEntity.notFound().build());
