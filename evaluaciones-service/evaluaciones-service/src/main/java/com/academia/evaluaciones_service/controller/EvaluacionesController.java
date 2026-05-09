@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.academia.evaluaciones_service.model.Evaluaciones;
 import com.academia.evaluaciones_service.service.EvaluacionesService;
 @RestController
-@RequestMapping("/api/examenes")
+@RequestMapping("/api/evaluaciones")
 public class EvaluacionesController {
 
     private final EvaluacionesService evaluacionesService;  

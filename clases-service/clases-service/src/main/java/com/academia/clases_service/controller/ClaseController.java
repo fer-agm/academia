@@ -44,7 +44,7 @@ public class ClaseController {
     public ResponseEntity<Clase> actualizar(@PathVariable Long id, @RequestBody Clase clase) {
         return claseService.getById(id)
                 .map(existing -> {
-                    clase.setId_clase(id);
+                    clase.setIdClase(id);
                     return ResponseEntity.ok(claseService.guardar(clase));
                 })
                 .orElse(ResponseEntity.notFound().build());
