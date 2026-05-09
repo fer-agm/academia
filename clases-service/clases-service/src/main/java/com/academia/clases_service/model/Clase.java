@@ -19,9 +19,9 @@ public class Clase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
     private Long id_clase;
-    private String nombre_clase;
-    private String contenido_clase;
-    private int duracion_clase;
+    private Long realizada;
     private Long id_curso;
 
 }
+
+

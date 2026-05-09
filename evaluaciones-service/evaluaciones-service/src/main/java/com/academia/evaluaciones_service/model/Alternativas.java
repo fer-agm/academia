@@ -18,9 +18,8 @@ public class Alternativas {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id_alternativa;
-
     private String texto;
-    private boolean correcto;
+    private String correcto;
     private Long id_pregunta;
 
 

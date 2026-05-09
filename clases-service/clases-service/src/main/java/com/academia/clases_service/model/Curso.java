@@ -20,9 +20,14 @@ public class Curso {
 
     private Long id_curso;
     private String nombre_curso;
+    private int duracion_curso;
     private String descripcion_curso;
     private double valor_curso;
     private Long id_categoria;
+    private int max_cupos;
     //private Long id_instructor;
+
+
+
 
 }
