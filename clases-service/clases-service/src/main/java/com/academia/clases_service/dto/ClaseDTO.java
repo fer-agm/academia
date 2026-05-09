@@ -1,11 +1,11 @@
 package com.academia.clases_service.dto;
 
+import com.academia.clases_service.model.Clase;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import com.academia.clases_service.model.Clase;
 
 @Data
 @NoArgsConstructor
@@ -13,15 +13,15 @@ import com.academia.clases_service.model.Clase;
 @Builder
 
 public class ClaseDTO {
-    private Long id_clase;
+    private Long idClase;
     private Long realizada;
-    private Long id_curso;
+    private Long idCurso;
 
     public Clase toModel() {
         Clase clase = new Clase();
-        clase.setIdClase(id_clase);
+        clase.setIdClase(idClase);
         clase.setRealizada(realizada);
-        clase.setIdCurso(id_curso);
+        clase.setIdCurso(idCurso);
         return clase;
     }
 

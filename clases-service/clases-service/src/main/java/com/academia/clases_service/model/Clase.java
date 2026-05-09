@@ -18,9 +18,9 @@ public class Clase {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
-    private Long id_clase;
+    private Long idClase;
     private Long realizada;
-    private Long id_curso;
+    private Long idCurso;
 
 }
 

@@ -18,14 +18,14 @@ public class Curso {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
-    private Long id_curso;
-    private String nombre_curso;
-    private int duracion_curso;
-    private String descripcion_curso;
-    private double valor_curso;
-    private Long id_categoria;
-    private int max_cupos;
-    //private Long id_instructor;
+    private Long idCurso;
+    private String nombreCurso;
+    private int duracionCurso;
+    private String descripcionCurso;
+    private double valorCurso;
+    private Long idCategoria;
+    private int maxCupos;
+    //private Long idInstructor;
 
 
 
