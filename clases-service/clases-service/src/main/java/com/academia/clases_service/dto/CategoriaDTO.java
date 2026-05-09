@@ -1,5 +1,7 @@
 package com.academia.clases_service.dto;
 
+import com.academia.clases_service.model.Categoria;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,19 +12,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CategoriaDTO {
-    private Long id_categoria;
-    private String nombre_categoria;
-    private String descripcion_categoria;
+    private Long idCategoria;
+    private String nombreCategoria;
+    private String descripcionCategoria;
 
     public Categoria toModel() {
-        return new Categoria(id_categoria, nombre_categoria, descripcion_categoria);
+        return new Categoria(idCategoria, nombreCategoria, descripcionCategoria);
     }
 
     public static CategoriaDTO fromModel(Categoria categoria) {
         if (categoria == null) {
             return null;
         }
-        return new CategoriaDTO(categoria.getId_categoria(), categoria.getNombre_categoria(), categoria.getDescripcion_categoria());
+        return new CategoriaDTO(categoria.getIdCategoria(), categoria.getNombreCategoria(), categoria.getDescripcionCategoria());
     }
 
 }

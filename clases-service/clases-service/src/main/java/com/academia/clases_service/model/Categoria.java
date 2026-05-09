@@ -19,9 +19,9 @@ public class Categoria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 
-    private Long id_categoria;
-    private String nombre_categoria;
-    private String descripcion_categoria;
+    private Long idCategoria;
+    private String nombreCategoria;
+    private String descripcionCategoria;
 
 }
 

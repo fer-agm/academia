@@ -1,12 +1,19 @@
 package com.academia.clases_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.academia.clases_service.model.Curso;
 import com.academia.clases_service.service.CursoService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/cursos")
@@ -44,7 +51,7 @@ public class CursoController {
     public ResponseEntity<Curso> actualizar(@PathVariable Long id, @RequestBody Curso curso) {
         return cursoService.getById(id)
                 .map(existing -> {
-                    curso.setId_curso(id);
+                    curso.setIdCurso(id);
                     return ResponseEntity.ok(cursoService.guardar(curso));
                 })
                 .orElse(ResponseEntity.notFound().build());
