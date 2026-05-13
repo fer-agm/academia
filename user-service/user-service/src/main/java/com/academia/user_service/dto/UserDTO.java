@@ -15,7 +15,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserDTO {
 
-    private String run;
+    private String id_usuario;
+    private String rut;
     private String nombre;
     private String apellido;
     private String correo;
