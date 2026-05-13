@@ -16,15 +16,27 @@ public class UserService {
     private UserRepository userRepository;
 
     public User guardarUsuario(User user) {
+        // Si la fecha de registro es nula, le asignamos la fecha actual del sistema
+        if (user.getFecha_Registro() == null) {
+            user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
+        }
         return userRepository.save(user);
     }
 
-    public List<User> ListarTodo() {
+    public List<User> listarTodo() {
         return userRepository.findAll();
     }
 
-    public User buscarPorRun (String run) {
-        return userRepository.findById(run).orElse (null);
+    public User buscarPorId(String id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    public User buscarPorRun(String run) {
+        // Como el RUN no es el @Id, 
+        return listarTodo().stream()
+                .filter(u -> u.getRun().equals(run))
+                .findFirst()
+                .orElse(null);
     }
 
     
