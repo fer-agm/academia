@@ -9,6 +9,5 @@ import com.academia.user_service.model.Rol;
 
 @Repository
 public interface RolRepository extends JpaRepository<Rol, Long> {
-    // Para buscar un rol por su nombre exacto
-    Optional<Rol> findByNombreRol(String nombre_rol);
+    Optional<Rol> findByNombreRol(String nombre);
 }

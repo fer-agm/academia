@@ -1,13 +1,10 @@
 package com.academia.user_service.service;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.academia.user_service.model.User;
 import com.academia.user_service.repository.UserRepository;
-
 
 @Service
 public class UserService {
@@ -15,8 +12,8 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    // --- CREATE (POST) ---
     public User guardarUsuario(User user) {
-        // Si la fecha de registro es nula, le asignamos la fecha actual del sistema
         if (user.getFecha_Registro() == null) {
             user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
         }
@@ -32,12 +29,29 @@ public class UserService {
     }
 
     public User buscarPorRun(String run) {
-        // Como el RUN no es el @Id, 
-        return listarTodo().stream()
-                .filter(u -> u.getRun().equals(run))
-                .findFirst()
-                .orElse(null);
+      
+        return userRepository.findByRun(run).orElse(null);
     }
 
     
+    public User actualizarUsuario(String id, User nuevosDatos) {
+        return userRepository.findById(id).map(user -> {
+            user.setNombre(nuevosDatos.getNombre());
+            user.setApellido(nuevosDatos.getApellido());
+            user.setUsuario(nuevosDatos.getUsuario());
+            user.setClave(nuevosDatos.getClave());
+            user.setEmail(nuevosDatos.getEmail());
+            user.setFecha_Nacimiento(nuevosDatos.getFecha_Nacimiento());
+            return userRepository.save(user);
+        }).orElse(null);
+    }
+
+  
+    public boolean eliminarUsuario(String id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
 }
