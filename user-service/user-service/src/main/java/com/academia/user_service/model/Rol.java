@@ -22,5 +22,5 @@ public class Rol {
     private Long id_rol;
 
     @Column(unique = true, nullable = false)
-    private String nombre_rol; // Ejemplo: "ADMIN", "ESTUDIANTE"
+        private String nombreRol;
 }
