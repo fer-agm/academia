@@ -1,18 +1,15 @@
 package com.academia.inscripciones_service.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InscripcionesDto {
-    private Long idInscripcion;
-    private String idEstudiante;
+public class CuposDto {
+    private Long idCupo;
     private Long idCurso;
-    private LocalDateTime fechaInscripcion;
-    private String estado;
+    private Integer numMaximo;
+    private Integer numDisponible;
 }

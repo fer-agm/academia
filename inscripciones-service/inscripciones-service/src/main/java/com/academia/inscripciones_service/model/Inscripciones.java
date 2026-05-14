@@ -17,15 +17,13 @@ public class Inscripciones {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id_inscripcion;
 
-    // Referencia al RUN del estudiante (Usuario)
     @Column(name = "id_estudiante")
     private String idEstudiante; 
 
-    // Referencia al ID del curso (del microservicio Cursos)
     @Column(name = "id_curso")
     private Long idCurso;
 
     private LocalDateTime fecha_inscripcion;
     
-    private String estado; // Ejemplo: "ACTIVO", "PENDIENTE", "CANCELADO"
+    private String estado; 
 }

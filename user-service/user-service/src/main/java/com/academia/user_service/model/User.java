@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class User {
     
     @Id
-    private String id; // llave primaria
+    private String id; 
 
     @Column(unique = true, nullable = false)
     private String run; 

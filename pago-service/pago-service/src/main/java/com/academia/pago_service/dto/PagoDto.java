@@ -8,8 +8,11 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TransaccionDto {
-    private Long idTransaccion;
-    private String metodo; 
+public class PagoDto {
+    private Long idPago;
+    private Double monto;
+    private String estado;
+    private String runEstudiante;
+    private Long idCurso;
     private LocalDateTime fecha;
 }

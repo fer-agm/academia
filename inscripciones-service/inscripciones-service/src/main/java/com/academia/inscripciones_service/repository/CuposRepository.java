@@ -10,6 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface CuposRepository extends JpaRepository<Cupos, Long> {
-    // Buscar cupos por el ID del curso
+
     Optional<Cupos> findByIdCurso(Long idCurso);
 }
