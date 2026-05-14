@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cupos {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id_cupo; // Generalmente se añade una PK autoincremental
+    private Long id_cupo; 
 
-    private Long id_curso; // Referencia al curso
+    @Column(name = "id_curso") 
+    private Long idCurso; 
     
     private Integer num_maximo;
     private Integer num_disponible;
