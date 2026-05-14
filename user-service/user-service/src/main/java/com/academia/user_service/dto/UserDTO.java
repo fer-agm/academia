@@ -4,7 +4,6 @@ import java.sql.Date;
 
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,14 +11,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class UserDTO {
-
-    private String id_usuario;
-    private String rut;
+    private String id;
+    private String run;
     private String nombre;
     private String apellido;
-    private String correo;
+    private Date fechaNacimiento;
     private String usuario;
-    private Date fecha_Nacimiento;
+    private String clave; // Opcional: eliminar en DTOs de respuesta por seguridad
+    private String email;
+    private Date fechaRegistro;
 }
+

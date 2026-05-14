@@ -1,5 +1,13 @@
 package com.academia.user_service.dto;
 
-public class RolDTO {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class RolDTO {
+    private Long idRol;
+    private String nombreRol;
 }
