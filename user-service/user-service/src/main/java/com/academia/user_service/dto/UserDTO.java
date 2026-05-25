@@ -18,7 +18,7 @@ public class UserDTO {
     private String apellido;
     private Date fechaNacimiento;
     private String usuario;
-    private String clave; // Opcional: eliminar en DTOs de respuesta por seguridad
+    private String clave; 
     private String email;
     private Date fechaRegistro;
 }
