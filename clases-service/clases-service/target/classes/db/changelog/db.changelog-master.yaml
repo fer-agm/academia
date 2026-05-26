@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 5
+      author: SoVeM
+      changes:
+        - createTable:
+            tableName: clases
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
