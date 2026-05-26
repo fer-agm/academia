@@ -1,10 +1,10 @@
 databaseChangeLog:
   - changeSet:
-      id: 2
+      id: 4
       author: SoVeM
       changes:
         - createTable:
-            tableName: pago
+            tableName: evaluaciones
             columns:
               - column:
                   name: id
