@@ -12,24 +12,24 @@ spring:
             - id: user-service
               uri: http://localhost:8081
               predicates:
-                - Path=/user/**
+                - Path=/api/usuarios/**, /api/auth/**, /api/roles/**
 
             - id: pago-service
               uri: http://localhost:8082
               predicates:
-                - Path=/pago/**
+                - Path=/api/pagos/**, /api/transacciones/**
 
             - id: clases-service
               uri: http://localhost:8083
               predicates:
                 - Path=/api/cursos/**, /api/categorias/**, /api/clases/**
-                            
+
             - id: evaluaciones-service
               uri: http://localhost:8084
               predicates:
                 - Path=/api/examenes/**, /api/preguntas/**, /api/alternativas/**
-            
+
             - id: inscripciones-service
               uri: http://localhost:8085
               predicates:
-                - Path=/inscripciones/**
+                - Path=/api/inscripciones/**, /api/cupos/**
