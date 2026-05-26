@@ -1,25 +1,35 @@
 package com.academia.user_service.dto;
 
-import java.sql.Date;
-
-
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
     private String id;
-    private String run;
-    private String nombre;
-    private String apellido;
-    private Date fechaNacimiento;
-    private String usuario;
-    private String clave; 
-    private String email;
-    private Date fechaRegistro;
-}
 
+    @NotBlank(message = "El RUN no puede estar vacío")
+    @Pattern(regexp = "\\d{7,8}-[\\dkK]", message = "El RUN debe tener formato válido (ej: 12345678-9)")
+    private String run;
+
+    @NotBlank(message = "El nombre no puede estar vacío")
+    @Size(max = 100, message = "El nombre no puede superar 100 caracteres")
+    private String nombre;
+
+    @NotBlank(message = "El apellido no puede estar vacío")
+    private String apellido;
+
+    @NotBlank(message = "El email no puede estar vacío")
+    @Email(message = "El email debe tener un formato válido")
+    private String email;
+
+    @NotBlank(message = "La clave no puede estar vacía")
+    @Size(min = 4, message = "La clave debe tener al menos 4 caracteres")
+    private String clave;
+}
