@@ -1,13 +1,13 @@
 package com.academia.clases_service.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import com.academia.clases_service.model.Clase;
+import com.academia.clases_service.repository.ClaseRepository;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.stereotype.Service;
-
-import com.academia.clases_service.model.Clase;
-import com.academia.clases_service.repository.ClaseRepository;
-
+@Slf4j
 @Service
 public class ClaseService {
 
@@ -18,22 +18,34 @@ public class ClaseService {
     }
 
     public List<Clase> getAll() {
+        log.info("[ClaseService] Obteniendo todas las clases");
         return claseRepository.findAll();
     }
 
     public Optional<Clase> getById(Long id) {
-        return claseRepository.findById(id);
+        log.info("[ClaseService] Buscando clase con ID: {}", id);
+        Optional<Clase> clase = claseRepository.findById(id);
+        if (clase.isEmpty()) {
+            log.warn("[ClaseService] Clase con ID {} no encontrada", id);
+        }
+        return clase;
     }
 
     public List<Clase> getByCurso(Long idCurso) {
+        log.info("[ClaseService] Buscando clases del curso ID: {}", idCurso);
         return claseRepository.findByIdCurso(idCurso);
     }
 
     public Clase guardar(Clase clase) {
-        return claseRepository.save(clase);
+        log.info("[ClaseService] Guardando clase: {}", clase.getNombreClase());
+        Clase saved = claseRepository.save(clase);
+        log.info("[ClaseService] Clase guardada con ID: {}", saved.getIdClase());
+        return saved;
     }
 
     public void borrar(Long id) {
+        log.info("[ClaseService] Eliminando clase con ID: {}", id);
         claseRepository.deleteById(id);
+        log.info("[ClaseService] Clase con ID {} eliminada", id);
     }
 }

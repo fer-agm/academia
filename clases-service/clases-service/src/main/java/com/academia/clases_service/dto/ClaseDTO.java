@@ -1,7 +1,9 @@
 package com.academia.clases_service.dto;
 
 import com.academia.clases_service.model.Clase;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,25 +13,35 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
 public class ClaseDTO {
     private Long idClase;
+
+    @NotBlank(message = "El nombre de la clase no puede estar vacío")
+    private String nombreClase;
+
+    @NotBlank(message = "El contenido no puede estar vacío")
+    private String contenidoClase;
+
+    @Positive(message = "La duración debe ser mayor a 0")
+    private int duracionClase;
+
     private Long realizada;
+
+    @NotNull(message = "El curso es obligatorio")
     private Long idCurso;
 
     public Clase toModel() {
-        Clase clase = new Clase();
-        clase.setIdClase(idClase);
-        clase.setRealizada(realizada);
-        clase.setIdCurso(idCurso);
-        return clase;
+        Clase cl = new Clase();
+        cl.setNombreClase(nombreClase);
+        cl.setContenidoClase(contenidoClase);
+        cl.setDuracionClase(duracionClase);
+        cl.setRealizada(realizada);
+        cl.setIdCurso(idCurso);
+        return cl;
     }
 
-    public static ClaseDTO fromModel(Clase clase) {
-        if (clase == null) {
-            return null;
-        }
-        return new ClaseDTO(clase.getIdClase(), clase.getRealizada(), clase.getIdCurso());
+    public static ClaseDTO fromModel(Clase cl) {
+        if (cl == null) return null;
+        return new ClaseDTO(cl.getIdClase(), cl.getNombreClase(), cl.getContenidoClase(), cl.getDuracionClase(), cl.getRealizada(), cl.getIdCurso());
     }
-
 }

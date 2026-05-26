@@ -1,7 +1,8 @@
 package com.academia.evaluaciones_service.dto;
 
 import com.academia.evaluaciones_service.model.Alternativas;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,20 +12,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
 public class AlternativasDTO {
-    private Long idAlternativa;
-    private String texto;
-    private String correcto;
-    private Long idPregunta;
+    private Long id_alternativa;
 
-    public Alternativas toModel(){
-        return new Alternativas(idAlternativa, texto, correcto, idPregunta);
+    @NotBlank(message = "El texto no puede estar vacío")
+    private String texto;
+
+    @NotNull(message = "Debe indicar si es correcta o no")
+    private Boolean correcto;  // ← Boolean con mayúscula
+
+    @NotNull(message = "La pregunta es obligatoria")
+    private Long id_pregunta;
+
+    public Alternativas toModel() {
+        Alternativas a = new Alternativas();
+        a.setTexto(texto);
+        a.setCorrecto(correcto);
+        a.setIdPregunta(id_pregunta);
+        return a;
     }
 
-    public static AlternativasDTO fromModel(Alternativas a){
+    public static AlternativasDTO fromModel(Alternativas a) {
         if (a == null) return null;
         return new AlternativasDTO(a.getIdAlternativa(), a.getTexto(), a.getCorrecto(), a.getIdPregunta());
-    }   
-
+    }
 }

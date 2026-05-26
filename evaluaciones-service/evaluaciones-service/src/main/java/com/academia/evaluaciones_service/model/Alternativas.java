@@ -19,7 +19,7 @@ public class Alternativas {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAlternativa;
     private String texto;
-    private String correcto;
+    private Boolean correcto;
     private Long idPregunta;
 
 

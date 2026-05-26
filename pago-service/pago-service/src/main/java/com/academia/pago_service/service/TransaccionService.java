@@ -1,45 +1,64 @@
 package com.academia.pago_service.service;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import com.academia.pago_service.model.Transaccion;
 import com.academia.pago_service.repository.TransaccionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class TransaccionService {
 
-    @Autowired
-    private TransaccionRepository transaccionRepository;
+    private final TransaccionRepository transaccionRepository;
+
+    public TransaccionService(TransaccionRepository transaccionRepository) {
+        this.transaccionRepository = transaccionRepository;
+    }
 
     public List<Transaccion> listarTodas() {
+        log.info("[TransaccionService] Obteniendo todas las transacciones");
         return transaccionRepository.findAll();
     }
 
     public Transaccion buscarPorId(Long id) {
-        return transaccionRepository.findById(id).orElse(null);
+        log.info("[TransaccionService] Buscando transacción con ID: {}", id);
+        Transaccion t = transaccionRepository.findById(id).orElse(null);
+        if (t == null) {
+            log.warn("[TransaccionService] Transacción con ID {} no encontrada", id);
+        }
+        return t;
     }
 
     public Transaccion registrarTransaccion(Transaccion t) {
+        log.info("[TransaccionService] Registrando transacción con método: {}", t.getMetodo());
         if (t.getFecha() == null) {
             t.setFecha(LocalDateTime.now());
         }
-        return transaccionRepository.save(t);
+        Transaccion saved = transaccionRepository.save(t);
+        log.info("[TransaccionService] Transacción registrada con ID: {}", saved.getId_transaccion());
+        return saved;
     }
 
     public Transaccion actualizarTransaccion(Long id, Transaccion nuevosDatos) {
+        log.info("[TransaccionService] Actualizando transacción con ID: {}", id);
         return transaccionRepository.findById(id).map(t -> {
             t.setMetodo(nuevosDatos.getMetodo());
-            return transaccionRepository.save(t);
+            Transaccion updated = transaccionRepository.save(t);
+            log.info("[TransaccionService] Transacción con ID {} actualizada", id);
+            return updated;
         }).orElse(null);
     }
 
     public boolean eliminar(Long id) {
+        log.info("[TransaccionService] Eliminando transacción con ID: {}", id);
         if (transaccionRepository.existsById(id)) {
             transaccionRepository.deleteById(id);
+            log.info("[TransaccionService] Transacción con ID {} eliminada", id);
             return true;
         }
+        log.warn("[TransaccionService] Transacción con ID {} no encontrada para eliminar", id);
         return false;
     }
 }
