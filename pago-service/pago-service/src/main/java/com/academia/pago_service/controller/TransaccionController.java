@@ -14,29 +14,29 @@ public class TransaccionController {
     @Autowired
     private TransaccionService transaccionService;
 
-    @GetMapping("/listar") // GET (Todos)
+    @GetMapping("/listar") 
     public List<Transaccion> listar() {
         return transaccionService.listarTodas();
     }
 
-    @GetMapping("/{id}") // GET (Por ID)
+    @GetMapping("/{id}") 
     public ResponseEntity<Transaccion> buscarPorId(@PathVariable Long id) {
         Transaccion t = transaccionService.buscarPorId(id);
         return t != null ? ResponseEntity.ok(t) : ResponseEntity.notFound().build();
     }
 
-    @PostMapping("/generar") // POST
+    @PostMapping("/generar")
     public ResponseEntity<Transaccion> generar(@RequestBody Transaccion transaccion) {
         return ResponseEntity.ok(transaccionService.registrarTransaccion(transaccion));
     }
 
-    @PutMapping("/actualizar/{id}") // PUT
+    @PutMapping("/actualizar/{id}") 
     public ResponseEntity<Transaccion> actualizar(@PathVariable Long id, @RequestBody Transaccion t) {
         Transaccion actualizada = transaccionService.actualizarTransaccion(id, t);
         return actualizada != null ? ResponseEntity.ok(actualizada) : ResponseEntity.notFound().build();
     }
 
-    @DeleteMapping("/eliminar/{id}") // DELETE
+    @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         return transaccionService.eliminar(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }

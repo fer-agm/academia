@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 4
+      author: SoVeM
+      changes:
+        - createTable:
+            tableName: evaluaciones
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false

@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: SoVeM
+      changes:
+        - createTable:
+            tableName: pago
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false

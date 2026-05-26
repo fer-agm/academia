@@ -31,7 +31,6 @@ public class RolController {
         return ResponseEntity.ok(rolService.guardarRol(rol));
     }
 
-    // --- NUEVOS MÉTODOS REQUERIDOS ---
 
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<Rol> actualizar(@PathVariable Long id, @RequestBody Rol rol) {
