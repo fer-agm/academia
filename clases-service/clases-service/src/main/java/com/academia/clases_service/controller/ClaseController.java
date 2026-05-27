@@ -25,7 +25,7 @@ public class ClaseController {
         this.claseService = claseService;
     }
 
-    @GetMapping
+    @GetMapping ("/listar")
     public ResponseEntity<List<Clase>> getAll() {
         return ResponseEntity.ok(claseService.getAll());
     }
