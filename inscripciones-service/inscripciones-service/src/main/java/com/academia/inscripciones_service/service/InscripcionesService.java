@@ -1,7 +1,6 @@
 package com.academia.inscripciones_service.service;
 
 
-import com.academia.inscripciones_service.dto.CursoDto;
 import com.academia.inscripciones_service.model.Inscripciones;
 import com.academia.inscripciones_service.repository.InscripcionesRepository;
 
