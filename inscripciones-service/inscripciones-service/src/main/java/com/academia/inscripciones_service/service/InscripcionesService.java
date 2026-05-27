@@ -1,21 +1,64 @@
 package com.academia.inscripciones_service.service;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+
+import com.academia.inscripciones_service.dto.CursoDto;
 import com.academia.inscripciones_service.model.Inscripciones;
 import com.academia.inscripciones_service.repository.InscripcionesRepository;
+
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+
+import reactor.core.publisher.Mono;
+
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @Service
 public class InscripcionesService {
 
     private final InscripcionesRepository inscripcionesRepository;
+    private final WebClient webClient;
 
-    public InscripcionesService(InscripcionesRepository inscripcionesRepository) {
+    @Value("${clases.service.url}")
+    private String clasesServiceUrl;
+
+
+    
+
+    public InscripcionesService(InscripcionesRepository inscripcionesRepository, WebClient webClient) {
         this.inscripcionesRepository = inscripcionesRepository;
+        this.webClient = webClient;
     }
+
+public Mono<Map<String,Object>> crearInscripcionConValidaciones(Inscripciones inscripciones){
+    log.info("Validando ID de curso: {}", inscripciones.getIdCurso());
+    return webClient.get()  
+        .uri(clasesServiceUrl + "/api/cursos/" + inscripciones.getIdCurso())
+        .retrieve() 
+        .bodyToMono(Void.class)  // ← Solo importa que exista, no los datos
+        .then(Mono.defer(() -> {
+            inscripciones.setFecha_inscripcion(LocalDateTime.now());
+            if (inscripciones.getEstado() == null) {
+                inscripciones.setEstado("ACTIVO");
+            }
+            Inscripciones saved = inscripcionesRepository.save(inscripciones);
+            Map<String, Object> response = new HashMap<>();
+            response.put("inscripcion", saved);
+            response.put("mensaje", "Inscripción creada exitosamente");
+            return Mono.just(response);
+        }))
+        .onErrorResume(e -> {
+            log.error("Error al validar curso: {}", e.getMessage());
+            return Mono.error(new RuntimeException("Curso con ID " + inscripciones.getIdCurso() + " no encontrado"));
+        });
+}
+
 
     public List<Inscripciones> listarTodas() {
         log.info("[InscripcionesService] Obteniendo todas las inscripciones");
