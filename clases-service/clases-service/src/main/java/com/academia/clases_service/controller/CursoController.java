@@ -25,7 +25,7 @@ public class CursoController {
         this.cursoService = cursoService;
     }
 
-    @GetMapping
+    @GetMapping ("/listar")
     public ResponseEntity<List<Curso>> getAll() {
         return ResponseEntity.ok(cursoService.getAll());
     }
