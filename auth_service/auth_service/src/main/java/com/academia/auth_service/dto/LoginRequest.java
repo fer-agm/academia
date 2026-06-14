@@ -1,6 +1,6 @@
 package com.academia.auth_service.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
@@ -10,7 +10,7 @@ public class LoginRequest {
     private String run;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    private String password;
+    private String clave;
 
 
 }
