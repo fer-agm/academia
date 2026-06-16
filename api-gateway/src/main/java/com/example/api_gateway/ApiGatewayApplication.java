@@ -11,3 +11,11 @@ public class ApiGatewayApplication {
 	}
 
 }
+
+
+// {
+//     "run": "12345678-9",
+//     "clave": "1234"
+// }
+
+// te da el token, vas al get en postman y en headers pones Authorization: Bearer 'token' y te da acceso.
