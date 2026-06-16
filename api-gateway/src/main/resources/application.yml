@@ -1,6 +1,12 @@
 server:
   port: 8080
-
+# 8080 api 
+# 8082 pagos
+# 8083 clases 
+# 8084 evaluaciones
+# 8085 inscripciones
+# 8086 usuarios
+# 8087 auth
 spring:
   main:
     web-application-type: reactive
@@ -38,3 +44,7 @@ spring:
               uri: http://localhost:8085
               predicates:
                 - Path=/api/inscripciones/**, /api/cupos/**
+
+
+jwt:
+  secret: academiaNoaferClaveSecretaSuperSeguraParaJWT2026123456789
