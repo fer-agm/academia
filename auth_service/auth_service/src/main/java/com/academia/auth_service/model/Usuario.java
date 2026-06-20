@@ -1,14 +1,8 @@
 package com.academia.auth_service.model;
 
-import java.sql.Date;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "usuarios")
@@ -18,18 +12,28 @@ import lombok.NoArgsConstructor;
 
 public class Usuario {
     @Id
-    private String id;
-    private String run;
-    private String nombre;
-    private String apellido;
+
     private String usuario;
-    private String clave;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(name = "fecha_registro")
-    private Date fechaRegistro;
+    @Column(nullable = false, unique = true)
+    private String run;
 
-    @Column(name = "fecha_nacimiento")
-    private Date fechaNacimiento;
+    @Column(nullable = false)
+    private String clave;
 
+    @Column(nullable = false)
+    private String nombre;
+    
+    @Column(nullable = false)
+    private String apellido;
+    
+
+  
 }
