@@ -22,20 +22,24 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> {})
             );
-
         return http.build();
-    }
+        }
 
     @Bean
     public JwtDecoder jwtDecoder() {
         SecretKeySpec key = new SecretKeySpec(
             secret.getBytes(StandardCharsets.UTF_8),
-            "HmacSHA512"
+            "HmacSHA256"
         );
 
         return NimbusJwtDecoder.withSecretKey(key).build();
