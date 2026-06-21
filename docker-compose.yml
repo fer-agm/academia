@@ -1,0 +1,80 @@
+x-common-env: &common-env
+  SECRET: "esta_es_mi_compleja_clave_secreta"
+
+services:
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *common-env
+    depends_on:
+      - auth_service
+      - calificaciones_service
+      - certificado_service
+      - clases-service
+      - evaluaciones-service
+      - inscripciones-service
+      - pago-service
+      - user-service
+
+
+
+  pago-service:
+    build: ./pagos-service
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *common-env
+
+  clases-service:
+    build: ./clases-service
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *common-env
+
+
+  evaluaciones-service:
+    build: ./evaluaciones-service
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *common-env
+
+  inscripciones-service:
+    build: ./inscripciones-service
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *common-env      
+
+      
+  usuarios-service:
+    build: ./usuarios-service
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *common-env
+
+  auth_service:
+    build: ./auth_service
+    ports:
+      - "8087:8087"
+    environment:
+      <<: *common-env
+
+  certificado-service:
+    build: ./certificado-service
+    ports:
+      - "8088:8088"
+    environment:
+      <<: *common-env      
+
+  calificaciones-service:
+    build: ./calificaciones-service
+    ports:
+      - "8089:8089"
+    environment:
+      <<: *common-env      

@@ -1,6 +1,7 @@
 package com.academia.clases_service.dto;
 
 import com.academia.clases_service.model.Categoria;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,7 @@ public class CategoriaDTO {
 
     public Categoria toModel() {
         Categoria c = new Categoria();
+        c.setIdCategoria(idCategoria);
         c.setNombreCategoria(nombreCategoria);
         c.setDescripcionCategoria(descripcionCategoria);
         return c;

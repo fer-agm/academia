@@ -42,6 +42,11 @@ public class CursoController {
         return ResponseEntity.ok(cursoService.getByCategoria(idCategoria));
     }
 
+    @GetMapping("/{id}/existe")
+    public ResponseEntity<Boolean> existe(@PathVariable Long id) {
+        return ResponseEntity.ok(cursoService.getById(id).isPresent());
+    }
+
     @PostMapping
     public ResponseEntity<Curso> crear(@RequestBody Curso curso) {
         return ResponseEntity.ok(cursoService.guardar(curso));
