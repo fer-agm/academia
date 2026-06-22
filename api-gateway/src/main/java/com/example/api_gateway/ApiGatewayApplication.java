@@ -11,7 +11,7 @@ public class ApiGatewayApplication {
 	}
 
 }
-
+// http://localhost:PUERTO/swagger-ui/index.html
 
 // {
 //     "run": "12345678-9",
