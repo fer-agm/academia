@@ -32,7 +32,7 @@ public class CertificadoService {
             cert.setFechaEmision(LocalDateTime.now());
             cert.setCodigo(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         } else {
-            // Si es una actualización, preservamos la fecha y el código originales de la BD
+            
             repository.findById(cert.getIdCertificado()).ifPresent(existente -> {
                 if (cert.getFechaEmision() == null) cert.setFechaEmision(existente.getFechaEmision());
                 if (cert.getCodigo() == null) cert.setCodigo(existente.getCodigo());
