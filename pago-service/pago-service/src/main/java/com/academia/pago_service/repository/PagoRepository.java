@@ -10,5 +10,4 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     
     List<Pago> findByRunEstudiante(String runEstudiante);
 
-    List<Pago> findById(String id_pago);
 }

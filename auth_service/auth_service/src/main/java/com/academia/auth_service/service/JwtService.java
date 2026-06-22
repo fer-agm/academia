@@ -21,9 +21,9 @@ public class JwtService {
         Date ahora = new Date();
         Date expiration = new Date(ahora.getTime() + 1000*60*60);
         return Jwts.builder()
-        .subject(run)
-        .issuedAt(ahora)
-        .expiration(expiration)
+        .setSubject(run)
+        .setIssuedAt(ahora)
+        .setExpiration(expiration)
         .signWith(key)
         .compact();
     }
@@ -32,11 +32,11 @@ public class JwtService {
         if (token == null || token.isBlank()) return null;
         String jwt = token.startsWith("Bearer ") ? token.substring(7) : token;
         try {
-        return Jwts.parser()
-            .verifyWith((SecretKey) key)
+        return Jwts.parserBuilder()
+            .setSigningKey(key)
             .build()
-            .parseSignedClaims(jwt)
-            .getPayload()
+            .parseClaimsJws(jwt)
+            .getBody()
             .getSubject();
         } catch (JwtException | IllegalArgumentException e) {
             return null;
@@ -48,10 +48,10 @@ public class JwtService {
         if (token == null || token.isBlank()) return false;
         String jwt = token.startsWith("Bearer ") ? token.substring(7) : token;
         try {
-            Jwts.parser()
-                .verifyWith((SecretKey)key)
+            Jwts.parserBuilder()
+                .setSigningKey(key)
                 .build()
-                .parseSignedClaims(jwt);
+                .parseClaimsJws(jwt);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;

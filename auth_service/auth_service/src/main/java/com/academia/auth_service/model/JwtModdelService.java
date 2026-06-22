@@ -3,27 +3,52 @@ package com.academia.auth_service.model;
 import java.security.Key;
 import java.util.Date;
 
-import org.springframework.stereotype.Service;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import jakarta.annotation.PostConstruct;
 
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
-@Service
+@Component
 
-public class JwtService {
-    private final Key key = Keys.hmacShaKeyFor("esta_es_mi_compleja_clave_secreta".getBytes());
-//    private final Key key = Keys.hmacShaKeyFor("9f3c2a87d1e64b55c6f4ab90e1d73c5f2d89b7aa34df56e0a1bf92c47e68d12f".getBytes());
+public class JwtModdelService {
+
+
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @Value("${jwt.expiration:3600000}")
+    private long expirationMs;
+
+    private Key key;
+
+@PostConstruct
+    public void init() {
+        // Ensure the key is at least 32 bytes for HS256
+        byte[] keyBytes = secret.getBytes();
+        if (keyBytes.length < 32) {
+            byte[] paddedKey = new byte[32];
+            System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 32));
+            key = Keys.hmacShaKeyFor(paddedKey);
+        } else {
+            key = Keys.hmacShaKeyFor(keyBytes);
+        }
+    }
+
 
     public String generateToken(String run) {
         Date ahora = new Date();
-        Date expiration = new Date(ahora.getTime() + 1000 * 60 * 60);
+        Date expiration = new Date(ahora.getTime() + expirationMs);
         return Jwts.builder()
-        .setSubject(run)
-        .setIssuedAt(new Date())
-        .setExpiration(expiration)
-        .signWith(key)
-        .compact();
+            .setSubject(run)
+            .setIssuedAt(ahora)
+            .setExpiration(expiration)
+            .signWith(key)
+            .compact();
     }
 
 
