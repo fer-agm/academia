@@ -3,7 +3,6 @@ package com.academia.auth_service.service;
 import java.security.Key;
 import java.util.Date;
 
-import javax.crypto.SecretKey;
 
 import org.springframework.stereotype.Service;
 

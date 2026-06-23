@@ -4,7 +4,6 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.FutureOrPresent;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,14 +11,12 @@ import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
-import java.util.Date;
 
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
 
 @Table(name = "pagos")
 public class Pago {
@@ -61,7 +58,7 @@ public class Pago {
     private String medioPago;
 
    @Column(nullable = false)
-    private Date fecha;
+    private LocalDateTime fecha;
 }
 
 

@@ -27,6 +27,12 @@ spring:
         webflux:
           routes:
 
+            - id: swagger-ui
+              uri: https://localhost:8080
+              predicates:
+                - Path=/swagger-ui/** 
+
+
             - id: calificaciones-service
               uri: http://localhost:8089
               predicates:

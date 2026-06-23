@@ -1,6 +1,5 @@
 package com.academia.auth_service.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,17 +10,36 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
     
-    @Value("${jwt.secret}")
-    private String jwtSecret; 
+    // @Value("${SECRET}")
+    // private String secret;
+
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
+            .csrf(csrf -> csrf.disable())
+        //    .httpBasic(httpBasic -> httpBasic.disable())
+         //   .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers(
+                    "/auth/**",
+                    "/api/auth/**",
+                    "/api/auth/login",
+                    "/api/auth/register",
+                    "/api/auth/registrar",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
+                ).permitAll()
                 .anyRequest().authenticated()
-            )
-            .csrf(csrf -> csrf.disable());
+            );
+
         return http.build();
     }
-}
+
+
+
+    }

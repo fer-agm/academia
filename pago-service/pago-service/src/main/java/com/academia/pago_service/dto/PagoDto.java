@@ -15,7 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -33,24 +33,24 @@ public class PagoDto {
     @NotNull(message = "El valor neto es obligatorio")
     @Min(value = 100, message = "El valor mínimo es 100")
     @Max(value = 1000000, message = "El valor máximo es 1000000")
-    private Integer valorNeto;
+    private int valorNeto;
 
     @NotNull(message = "El % de descuento es obligatorio")
     @Min(value = 0, message = "El valor mínimo es 0")
     @Max(value = 100, message = "El valor máximo es 100")
-    private Integer descuento;
+    private int descuento;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Integer iva;
+    private int iva;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Integer totalPagar;
+    private int totalPagar;
 
     @NotBlank(message = "El medio de pago es obligatorio")
     private String medioPago;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Date fecha;
+    private LocalDateTime fecha;
 
     public Pago toModel() {
         return new Pago(
@@ -58,9 +58,9 @@ public class PagoDto {
                 runEstudiante,
                 idCurso,
                 valorNeto,
-                iva != null ? iva : 0,
+                iva ,
                 descuento,
-                totalPagar != null ? totalPagar : 0,
+                totalPagar,
                 medioPago,
                 fecha
         );
@@ -80,6 +80,7 @@ public class PagoDto {
         );
     }
 }
+//idpago run idcurso valorneto iva descuento totalpagar mediopago fecha
 
 
 
