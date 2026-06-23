@@ -1,6 +1,5 @@
 x-common-env: &common-env
   SECRET: "esta_es_mi_compleja_clave_secreta"
-
 services:
 
   api-gateway:
@@ -22,7 +21,7 @@ services:
 
 
   pago-service:
-    build: ./pagos-service
+    build: ./pago-service
     ports:
       - "8082:8082"
     environment:
@@ -66,14 +65,14 @@ services:
       <<: *common-env
 
   certificado-service:
-    build: ./certificado-service
+    build: ./certificado_service
     ports:
       - "8088:8088"
     environment:
       <<: *common-env      
 
   calificaciones-service:
-    build: ./calificaciones-service
+    build: ./calificaciones_service
     ports:
       - "8089:8089"
     environment:

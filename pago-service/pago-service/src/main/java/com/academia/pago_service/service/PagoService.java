@@ -2,15 +2,15 @@ package com.academia.pago_service.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Date;
+// java.time.LocalDateTime used for date-time fields
 import org.springframework.web.reactive.function.client.WebClient;
-
 
 import org.springframework.stereotype.Service;
 import com.academia.pago_service.model.Pago;
 import com.academia.pago_service.repository.PagoRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import java.time.LocalDateTime;
 
 import com.academia.pago_service.exception.*;
 
@@ -40,7 +40,7 @@ public class PagoService {
         try {
             if (pago.getTotalPagar() <=0) throw new IllegalArgumentException("totalPagar requerido");
             if (pago.getMedioPago() == null || pago.getMedioPago().isBlank()) throw new IllegalArgumentException("medioPago requerido");
-            if (pago.getFecha() == null) pago.setFecha(new Date());
+            if (pago.getFecha() == null) pago.setFecha(LocalDateTime.now());
 
             logger.info("ID CURSO = {}", pago.getIdCurso());
 
@@ -48,21 +48,21 @@ public class PagoService {
             logger.info("URI = {}", uri);
 
             logger.info("Realizando petición a api-gateway: {}", uri);
-            Boolean existePago = webClient.get()
+            Boolean existeCurso = webClient.get()
                     .uri(String.format(cursoPath, pago.getIdCurso()))
                     .retrieve()
                     .bodyToMono(Boolean.class)
                     .block();
 
-            logger.info("Respuesta de api-gateway: existePago={}", existePago);
+            logger.info("Respuesta de api-gateway: existePago={}", existeCurso);
 
-            if (existePago == null) {
-                logger.error("No se pudo validar la existencia del pago");
-                throw new BadRequestException("No se pudo validar la existencia del pago");
+            if (existeCurso == null) {
+                logger.error("No se pudo validar la existencia del curso");
+                throw new BadRequestException("No se pudo validar la existencia del curso");
             }
-            if (Boolean.FALSE.equals(existePago)) {
-                logger.warn("Pago no existe con id={}", pago.getId_pago());
-                throw new ResourceNotFoundException("Pago no existe");
+            if (Boolean.FALSE.equals(existeCurso)) {
+                logger.warn("Curso con id={} no existe.", pago.getIdCurso());
+                throw new ResourceNotFoundException("Curso no existe");
             }
 
             Pago pagoGuardado = pagoRepository.save(pago);
@@ -100,7 +100,7 @@ public class PagoService {
 
             if (pago.getValorNeto() <= 0) throw new IllegalArgumentException("Valor Neto requerido");
             if (pago.getMedioPago() == null || pago.getMedioPago().isBlank()) throw new IllegalArgumentException("Medio Pago Requerido");
-            if (pago.getFecha() == null) pago.setFecha(new Date());
+            if (pago.getFecha() == null) pago.setFecha(LocalDateTime.now());
 
             logger.info("Validando existencia de curso para pago id_pago={}", pago.getId_pago());
             Boolean existePago = webClient.get()

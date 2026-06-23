@@ -1,6 +1,6 @@
 package com.academia.pago_service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Random;
 
 import org.springframework.boot.CommandLineRunner;
@@ -42,7 +42,7 @@ public class DataLoader implements CommandLineRunner {
             pago.setDescuento(descuento);
             pago.setTotalPagar(totalPagar);
             pago.setMedioPago(faker.options().option("Tarjeta de Crédito", "Transferencia", "Efectivo"));
-            pago.setFecha(new Date());
+            pago.setFecha(LocalDateTime.now());
 
             pagoRepository.save(pago);
         }
