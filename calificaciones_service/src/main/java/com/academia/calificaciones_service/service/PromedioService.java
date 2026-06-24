@@ -1,13 +1,15 @@
 package com.academia.calificaciones_service.service;
 
-import com.academia.calificaciones_service.dto.PromedioDTO;
-import com.academia.calificaciones_service.model.Promedio;
-import com.academia.calificaciones_service.repository.PromedioRepository;
+import java.util.List;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import java.util.List;
-import java.util.Optional;
+
+import com.academia.calificaciones_service.dto.PromedioDTO;
+import com.academia.calificaciones_service.model.Promedio;
+import com.academia.calificaciones_service.repository.PromedioRepository;
 
 @Service
 public class PromedioService {
@@ -41,7 +43,7 @@ public class PromedioService {
     }
 
     private PromedioDTO convertToDTO(Promedio entity) {
-        return new PromedioDTO(entity.getIdPromedio(), entity.getIdEstudiante(), entity.getIdCurso(), entity.getPromedioGeneral(), entity.getTotalEvaluaciones());
+        return new PromedioDTO(entity.getIdPromedio(), entity.getIdCurso(), entity.getIdEstudiante(), entity.getPromedioGeneral(), entity.getTotalEvaluaciones());
     }
 
     private Promedio convertToEntity(PromedioDTO dto) {
