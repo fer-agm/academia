@@ -1,6 +1,23 @@
 x-common-env: &common-env
   SECRET: "esta_es_mi_compleja_clave_secreta"
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/academia_noafer
+  SPRING_DATASOURCE_USERNAME: root
+  SPRING_DATASOURCE_PASSWORD: root
 services:
+
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: academia_noafer
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api-gateway:
     build: ./api-gateway
@@ -9,9 +26,9 @@ services:
     environment:
       <<: *common-env
     depends_on:
-      - auth_service
-      - calificaciones_service
-      - certificado_service
+      - auth-service
+      - calificaciones-service
+      - certificado-service
       - clases-service
       - evaluaciones-service
       - inscripciones-service
@@ -26,14 +43,18 @@ services:
       - "8082:8082"
     environment:
       <<: *common-env
-
+    depends_on:
+      mysql:
+        condition: service_healthy
   clases-service:
     build: ./clases-service
     ports:
       - "8083:8083"
     environment:
       <<: *common-env
-
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   evaluaciones-service:
     build: ./evaluaciones-service
@@ -41,6 +62,9 @@ services:
       - "8084:8084"
     environment:
       <<: *common-env
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   inscripciones-service:
     build: ./inscripciones-service
@@ -48,21 +72,30 @@ services:
       - "8085:8085"
     environment:
       <<: *common-env      
-
+    depends_on:
+      mysql:
+        condition: service_healthy
       
-  usuarios-service:
-    build: ./usuarios-service
+  user-service:
+    build: ./user-service
     ports:
       - "8086:8086"
     environment:
       <<: *common-env
+    depends_on:
+      mysql:
+        condition: service_healthy
 
-  auth_service:
+  auth-service:
     build: ./auth_service
     ports:
       - "8087:8087"
     environment:
       <<: *common-env
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 
   certificado-service:
     build: ./certificado_service
@@ -70,6 +103,9 @@ services:
       - "8088:8088"
     environment:
       <<: *common-env      
+    depends_on:
+      mysql:
+        condition: service_healthy      
 
   calificaciones-service:
     build: ./calificaciones_service
@@ -77,3 +113,6 @@ services:
       - "8089:8089"
     environment:
       <<: *common-env      
+    depends_on:
+      mysql:
+        condition: service_healthy      
