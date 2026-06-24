@@ -1,5 +1,6 @@
 x-common-env: &common-env
-  SECRET: "esta_es_mi_compleja_clave_secreta"
+  SECRET: "esta_es_mi_compleja_clave_secreta_para_jwt_2026_academia_noafer"
+  JWT_SECRET: "esta_es_mi_compleja_clave_secreta_para_jwt_2026_academia_noafer"
   SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/academia_noafer
   SPRING_DATASOURCE_USERNAME: root
   SPRING_DATASOURCE_PASSWORD: root
