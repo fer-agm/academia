@@ -1,10 +1,13 @@
 package com.academia.auth_service.service;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.academia.auth_service.model.*;
+
+import com.academia.auth_service.model.Usuario;
 import com.academia.auth_service.repository.UsuarioRepository;
-import java.util.Optional;
+
 
 @Service
 public class UsuarioService {
@@ -41,7 +44,7 @@ public class UsuarioService {
         usuario.setRun(run);
         // store SHA-1 hash of the password
         usuario.setClave(hashService.sha1(clave));
-
+        // nombre/apellido/email are left null here; they belong to user-service's profile.
         usuarioRepository.save(usuario);
 
         return "¡Usuario creado exitosamente!";

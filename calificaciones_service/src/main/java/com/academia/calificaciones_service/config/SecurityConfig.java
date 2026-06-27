@@ -1,5 +1,4 @@
-package com.academia.clases_service.config;
-
+package com.academia.calificaciones_service.config;
 
 import java.nio.charset.StandardCharsets;
 
@@ -34,7 +33,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-
     @Bean
     public JwtDecoder jwtDecoder() {
         SecretKeySpec key = new SecretKeySpec(
@@ -43,7 +41,5 @@ public class SecurityConfig {
         );
 
         return NimbusJwtDecoder.withSecretKey(key).build();
-
-
-}
+    }
 }
