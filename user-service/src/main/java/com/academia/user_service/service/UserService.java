@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 public class UserService {
 
-    /** Default password assigned to the auth credential created with each new user. */
+    /** Fallback password if the user profile has no clave. */
     private static final String DEFAULT_PASSWORD = "1234";
 
     private final UserRepository userRepository;
@@ -37,25 +37,26 @@ public class UserService {
         }
         User saved = userRepository.save(user);
         log.info("[UserService] Usuario creado con ID: {}", saved.getId());
-        crearCredencialAuth(saved.getRun());
+        crearCredencialAuth(saved.getRun(), saved.getClave());
         return saved;
     }
 
     /**
-     * Provisions a login credential in auth-service for the given RUN with the default
-     * password so the new user can authenticate. Best-effort: a failure here (e.g. the
-     * credential already exists) must not fail user creation.
+     * Provisions a login credential in auth-service mirroring the user's profile clave,
+     * so the new user logs in with the same run + clave they were created with.
+     * Best-effort: a failure here (e.g. the credential already exists) must not fail user creation.
      */
-    private void crearCredencialAuth(String run) {
+    private void crearCredencialAuth(String run, String clave) {
+        String pass = (clave == null || clave.isBlank()) ? DEFAULT_PASSWORD : clave;
         try {
             webClient.post()
                     .uri(authServiceUrl + "/api/auth/registrar")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(Map.of("run", run, "clave", DEFAULT_PASSWORD))
+                    .bodyValue(Map.of("run", run, "clave", pass))
                     .retrieve()
                     .toBodilessEntity()
                     .block();
-            log.info("[UserService] Credencial de auth creada para RUN {} (clave por defecto: {})", run, DEFAULT_PASSWORD);
+            log.info("[UserService] Credencial de auth creada para RUN {} (clave del perfil)", run);
         } catch (Exception e) {
             log.warn("[UserService] No se pudo crear la credencial de auth para RUN {}: {}", run, e.getMessage());
         }
