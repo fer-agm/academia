@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academia — Agregar un Microservicio Nuevo</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #273449; --txt: #e2e8f0;
+    --muted: #94a3b8; --accent: #38bdf8; --green: #4ade80; --red: #f87171;
+    --amber: #fbbf24; --border: #334155; --code: #0b1120;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.6; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 2rem; margin: 0 0 4px; }
+  h2 { margin-top: 40px; border-bottom: 2px solid var(--border); padding-bottom: 6px; color: #fff; }
+  h2 .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 8px; }
+  h3 { color: var(--accent); margin-top: 24px; font-size: 1.05rem; }
+  .sub { color: var(--muted); margin-top: 0; }
+  code { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.88em; color: #fde68a; }
+  pre { background: var(--code); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.85rem; }
+  pre code { background: none; padding: 0; color: #cbd5e1; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel2); }
+  tr:nth-child(even) td { background: var(--panel); }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 20px; margin: 18px 0; }
+  .note { border-left: 4px solid var(--accent); }
+  .warn { border-left: 4px solid var(--amber); }
+  .danger { border-left: 4px solid var(--red); }
+  a { color: var(--accent); }
+  .pill { display: inline-block; background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; color: var(--muted); }
+  ul li, ol li { margin: 6px 0; }
+  .kbd { color: var(--green); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>➕ Agregar un Microservicio Nuevo</h1>
+  <p class="sub">Receta paso a paso para que un servicio nuevo encaje en el stack: CRUD ruteado por el gateway + documentado en Swagger, como si siempre hubiera estado.</p>
+
+  <div class="card note">
+    <strong>Ejemplo usado en esta guía:</strong> un <code>reportes-service</code> que expone <code>/api/reportes</code> en el puerto <strong>8090</strong>
+    (el siguiente libre). Sustituye <code>reportes</code> / <code>8090</code> por los tuyos.
+  </div>
+
+  <h3>Puertos en uso</h3>
+  <table>
+    <tr><th>Puerto</th><th>Servicio</th></tr>
+    <tr><td>8080</td><td>api-gateway</td></tr>
+    <tr><td>8082–8089</td><td>pago, clases, evaluaciones, inscripciones, user, auth, certificado, calificaciones</td></tr>
+    <tr><td><strong>8090+</strong></td><td><strong>libre → úsalo para el nuevo servicio</strong></td></tr>
+  </table>
+
+  <!-- 1 -->
+  <h2><span class="num">1.</span>Clonar un servicio existente como plantilla</h2>
+  <p>Copia la carpeta de un servicio parecido (p. ej. <code>calificaciones_service</code>). Ya trae lo correcto: <code>pom.xml</code> con
+     Spring Boot <strong>4.0.x</strong> y <strong>springdoc 3.0.3</strong>, el <code>Dockerfile</code> multi-stage y las clases de config. Renombra paquete y artefacto.</p>
+  <ul>
+    <li>Mantén <code>spring-boot-starter-web</code> (MVC). Elige <strong>uno</strong> entre webmvc/webflux, no ambos.</li>
+    <li><code>springdoc-openapi-starter-webmvc-ui</code> debe ser <strong>3.0.3</strong> (la 2.x crashea en Boot 4).</li>
+    <li><code>spring-boot-starter-oauth2-resource-server</code> solo si el servicio requiere autenticación.</li>
+  </ul>
+
+  <!-- 2 -->
+  <h2><span class="num">2.</span>Entidad — siempre id autoincremental</h2>
+  <pre><code>@Id
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+@Schema(accessMode = Schema.AccessMode.READ_ONLY)   // oculta el id del body en Swagger
+private Long id;</code></pre>
+  <p class="sub">Nunca un <code>@Id</code> tipo <code>String</code> manual (ese fue el bug de <code>User</code>).</p>
+
+  <!-- 3 -->
+  <h2><span class="num">3.</span>Controller — respeta la convención de rutas</h2>
+  <p>El gateway rutea por prefijo de ruta, así que la base del controller <strong>debe coincidir</strong> con la ruta del paso 8.</p>
+  <pre><code>@RestController
+@RequestMapping("/api/reportes")
+@Tag(name = "Reportes")
+public class ReporteController {
+
+    @GetMapping("/listar")     // listar todos
+    @GetMapping("/{id}")       // obtener uno
+    @PostMapping               // crear  (devuelve la entidad guardada)
+    @PutMapping("/{id}")       // actualizar
+    @DeleteMapping("/{id}")    // eliminar
+}</code></pre>
+  <div class="card warn">
+    Usa un <strong>DTO o la entidad</strong> como <code>@RequestBody</code> — <strong>nunca</strong> <code>Map&lt;String,String&gt;</code>
+    (eso genera el esquema basura <code>additionalProp1/2/3</code> en Swagger).
+  </div>
+
+  <!-- 4 -->
+  <h2><span class="num">4.</span>application.properties — bloque estándar</h2>
+  <pre><code>spring.application.name=reportes-service
+server.port=8090
+spring.datasource.url=${SPRING_DATASOURCE_URL}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.jpa.hibernate.ddl-auto=update
+spring.liquibase.enabled=false
+spring.data.rest.detection-strategy=annotated   # oculta los endpoints crudos /reportes
+SECRET=esta_es_mi_compleja_clave_secreta_para_jwt_2026_academia_noafer
+springdoc.api-docs.path=/v3/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html
+# solo si vas a sembrar datos:
+# spring.sql.init.mode=always
+# spring.jpa.defer-datasource-initialization=true</code></pre>
+
+  <!-- 5 -->
+  <h2><span class="num">5.</span>SwaggerConfig — servidor relativo (clave para "Try it out")</h2>
+  <p>Copia un <code>SwaggerConfig</code> existente y asegúrate de que tenga:</p>
+  <pre><code>.addServersItem(new Server().url("/"))   // las llamadas salen por el gateway, no por http://reportes-service:8090</code></pre>
+
+  <!-- 6 -->
+  <h2><span class="num">6.</span>SecurityConfig — cópialo tal cual si requiere JWT</h2>
+  <p>Igual que los demás servicios protegidos: permite las rutas de swagger, autentica el resto, decodificador HS256
+     <code>NimbusJwtDecoder</code> con <code>${SECRET}</code>.</p>
+  <pre><code>.authorizeHttpRequests(auth -> auth
+    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
+                     "/swagger-resources/**", "/webjars/**").permitAll()
+    .anyRequest().authenticated())
+.oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));</code></pre>
+  <p class="sub">Si el recurso es público, puedes omitir SecurityConfig — pero entonces solo queda protegido por el gateway.</p>
+
+  <!-- 7 -->
+  <h2><span class="num">7.</span>docker-compose.yml — agrega el servicio</h2>
+  <pre><code>  reportes-service:
+    build: ./reportes_service
+    ports: ["8090:8090"]
+    environment:
+      &lt;&lt;: *common-env
+    depends_on:
+      mysql:
+        condition: service_healthy</code></pre>
+  <p>Y añade <code>reportes-service</code> al <code>depends_on</code> del <strong>api-gateway</strong>.</p>
+
+  <!-- 8 -->
+  <h2><span class="num">8.</span>Gateway — ruta + entrada en el desplegable de Swagger</h2>
+  <p>En <code>api-gateway/src/main/resources/application.yml</code>. La ruta del predicado <strong>debe ser igual</strong> a la base del controller, y el <code>RewritePath</code> es obligatorio para los docs:</p>
+  <pre><code>            - id: reportes-service
+              uri: http://reportes-service:8090
+              predicates:
+                - Path=/api/reportes/**, /v3/api-docs/reportes
+              filters:
+                - RewritePath=/v3/api-docs/reportes, /v3/api-docs</code></pre>
+  <p>En la lista <code>springdoc.swagger-ui.urls</code> (el desplegable de servicios):</p>
+  <pre><code>      - name: 9. Reportes
+        url: /v3/api-docs/reportes</code></pre>
+
+  <!-- 9 -->
+  <h2><span class="num">9.</span>Construir, levantar y <span style="color:var(--red)">reiniciar el gateway</span></h2>
+  <pre><code>docker compose up -d --build reportes-service
+docker compose restart api-gateway</code></pre>
+  <div class="card danger">
+    <strong>No te saltes el restart del gateway.</strong> Al crear/recrear un servicio, este obtiene una <strong>nueva IP</strong>;
+    el gateway (Netty) cachea la vieja y responde <code>Connection refused → 500</code> hasta que lo reinicias.
+  </div>
+
+  <!-- 10 -->
+  <h2><span class="num">10.</span>Verificar</h2>
+  <pre><code>GW=http://localhost:8080
+
+# doc agregado (aggregación + servidor relativo OK) -> 200
+curl -s -o /dev/null -w "%{http_code}\n" "$GW/v3/api-docs/reportes"
+
+# token y CRUD por el gateway -> 200
+TOKEN=$(curl -s -X POST "$GW/api/auth/login" -H "Content-Type: application/json" \
+  -d '{"run":"10492048-9","clave":"clave"}' | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+curl -s -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $TOKEN" "$GW/api/reportes/listar"</code></pre>
+  <p>Luego abre <code>http://localhost:8080/swagger-ui.html</code> → el desplegable muestra <span class="kbd">9. Reportes</span> → <strong>Authorize</strong> con un token → <strong>Try it out</strong>.</p>
+
+  <!-- gotchas -->
+  <h2><span class="num">⚠</span>Los 5 errores que siempre muerden</h2>
+  <table>
+    <tr><th>#</th><th>Trampa</th><th>Síntoma si la ignoras</th></tr>
+    <tr><td>1</td><td>springdoc debe ser <strong>3.0.3</strong> (no 2.x)</td><td>el servicio crashea al arrancar (HateoasProperties)</td></tr>
+    <tr><td>2</td><td><strong>servidor relativo <code>/</code></strong> en SwaggerConfig</td><td>"Try it out" llama a <code>http://reportes-service:8090</code> y falla (Failed to fetch)</td></tr>
+    <tr><td>3</td><td>ruta del controller ≡ predicado del gateway</td><td>404 a través del gateway</td></tr>
+    <tr><td>4</td><td><strong>reiniciar el gateway</strong> tras recrear servicios</td><td>500 Connection refused (IP cacheada)</td></tr>
+    <tr><td>5</td><td><code>spring.data.rest.detection-strategy=annotated</code></td><td>endpoints fantasma de la entidad (<code>/reportes</code>) en Swagger</td></tr>
+  </table>
+
+  <p class="sub" style="margin-top:40px; text-align:center;">Academia · proyecto Fullstack DuocUC · ver también <a href="startup-and-swagger.html">startup-and-swagger.html</a></p>
+
+</div>
+</body>
+</html>
