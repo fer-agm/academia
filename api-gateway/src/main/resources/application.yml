@@ -36,7 +36,7 @@ spring:
             - id: calificaciones-service
               uri: http://calificaciones-service:8089
               predicates:
-                - Path=/api/calificaciones/**, /v3/api-docs/calificaciones
+                - Path=/api/calificaciones/**, /api/promedios/**, /v3/api-docs/calificaciones
               filters:
                 - RewritePath=/v3/api-docs/calificaciones, /v3/api-docs
 
@@ -71,7 +71,7 @@ spring:
             - id: evaluaciones-service
               uri: http://evaluaciones-service:8084
               predicates:
-                - Path=/api/examenes/**, /api/preguntas/**, /api/alternativas/**, /v3/api-docs/evaluaciones
+                - Path=/api/evaluaciones/**, /api/preguntas/**, /api/alternativas/**, /v3/api-docs/evaluaciones
               filters:
                 - RewritePath=/v3/api-docs/evaluaciones, /v3/api-docs
 

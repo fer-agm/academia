@@ -1,6 +1,8 @@
 package com.academia.user_service.model;
 
 import java.sql.Date;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,9 +14,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-    
+
     @Id
-    private String id; 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
+    private Long id;
 
     @Column(unique = true, nullable = false)
     private String run; 

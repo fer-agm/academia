@@ -8,7 +8,7 @@ import com.academia.user_service.model.User;
 import com.academia.user_service.service.UserService;
 
 @RestController
-@RequestMapping("/api") 
+@RequestMapping("/api")
 public class UserController {
 
     @Autowired
@@ -21,7 +21,7 @@ public class UserController {
     }
 
     @GetMapping("/usuarios/buscar/{id}")
-    public ResponseEntity<User> buscar(@PathVariable String id) {
+    public ResponseEntity<User> buscar(@PathVariable Long id) {
         User user = userService.buscarPorId(id);
         return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
     }
@@ -32,24 +32,14 @@ public class UserController {
     }
 
     @PutMapping("/usuarios/actualizar/{id}")
-    public ResponseEntity<User> actualizar(@PathVariable String id, @RequestBody User userDetails) {
+    public ResponseEntity<User> actualizar(@PathVariable Long id, @RequestBody User userDetails) {
         User actualizado = userService.actualizarUsuario(id, userDetails);
         return actualizado != null ? ResponseEntity.ok(actualizado) : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/usuarios/eliminar/{id}")
-    public ResponseEntity<String> eliminar(@PathVariable String id) {
+    public ResponseEntity<String> eliminar(@PathVariable Long id) {
         boolean eliminado = userService.eliminarUsuario(id);
         return eliminado ? ResponseEntity.ok("Usuario eliminado") : ResponseEntity.notFound().build();
-    }
-
-    @PostMapping("/auth/login")
-    public ResponseEntity<?> login(@RequestBody User loginDetails) {
-        User user = userService.buscarPorRun(loginDetails.getRun());
-        
-        if (user != null && user.getClave().equals(loginDetails.getClave())) {
-            return ResponseEntity.ok(user);
-        }
-        return ResponseEntity.status(401).body("RUN o clave incorrectos");
     }
 }
