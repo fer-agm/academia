@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academia — Guía de Arranque & Swagger</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #273449; --txt: #e2e8f0;
+    --muted: #94a3b8; --accent: #38bdf8; --green: #4ade80; --red: #f87171;
+    --amber: #fbbf24; --border: #334155; --code: #0b1120;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.6; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 2rem; margin: 0 0 4px; }
+  h2 { margin-top: 42px; border-bottom: 2px solid var(--border); padding-bottom: 6px; color: #fff; }
+  h3 { color: var(--accent); margin-top: 28px; }
+  .sub { color: var(--muted); margin-top: 0; }
+  code { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-family: "JetBrains Mono", Consolas, monospace; font-size: 0.88em; color: #fde68a; }
+  pre { background: var(--code); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.85rem; }
+  pre code { background: none; padding: 0; color: #cbd5e1; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+  th { background: var(--panel2); }
+  tr:nth-child(even) td { background: var(--panel); }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 20px; margin: 18px 0; }
+  .note { border-left: 4px solid var(--accent); }
+  .warn { border-left: 4px solid var(--amber); }
+  .ok { color: var(--green); font-weight: 600; }
+  .bad { color: var(--red); font-weight: 600; }
+  .pill { display: inline-block; background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; color: var(--muted); }
+  ol li, ul li { margin: 6px 0; }
+  a { color: var(--accent); }
+  .step { font-weight: 600; color: #fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🎓 Academia — Guía de Arranque & Swagger</h1>
+  <p class="sub">Microservicios Spring Boot 4 + API Gateway + MySQL · todo se accede por el gateway en <code>:8080</code></p>
+
+  <!-- ───────────────────────── ARRANQUE ───────────────────────── -->
+  <h2>1. Arrancar el proyecto</h2>
+
+  <div class="card note">
+    <strong>Requisitos:</strong> solo <strong>Docker Desktop</strong>. No necesitas Java ni Maven instalados — cada
+    servicio se compila <em>dentro</em> de Docker (build multi-stage).
+  </div>
+
+  <p>Desde la raíz del repositorio:</p>
+  <pre><code># Construir e iniciar todo (primera vez o tras cambios de código)
+docker compose up --build -d
+
+# Iniciar sin reconstruir
+docker compose up -d
+
+# Ver estado de los contenedores
+docker compose ps
+
+# Ver logs de un servicio
+docker compose logs -f auth-service
+
+# Reconstruir/reiniciar un solo servicio
+docker compose up --build -d clases-service
+
+# Detener todo
+docker compose down</code></pre>
+
+  <div class="card warn">
+    Los scripts <code>build-all.bat</code> / <code>clean-all.bat</code> ya <strong>no existen</strong> y no se usan:
+    <code>docker compose</code> los reemplaza por completo.
+  </div>
+
+  <h3>Servicios y puertos</h3>
+  <table>
+    <tr><th>Servicio</th><th>Puerto</th><th>Rol</th></tr>
+    <tr><td><strong>api-gateway</strong></td><td><strong>8080</strong></td><td>Puerta de entrada única (auth + ruteo + Swagger)</td></tr>
+    <tr><td>pago-service</td><td>8082</td><td>Pagos / transacciones</td></tr>
+    <tr><td>clases-service</td><td>8083</td><td>Cursos / clases / categorías</td></tr>
+    <tr><td>evaluaciones-service</td><td>8084</td><td>Exámenes / preguntas / alternativas</td></tr>
+    <tr><td>inscripciones-service</td><td>8085</td><td>Inscripciones / cupos</td></tr>
+    <tr><td>user-service</td><td>8086</td><td>Usuarios (perfil) / roles</td></tr>
+    <tr><td>auth-service</td><td>8087</td><td>Login / registro / emisión de JWT</td></tr>
+    <tr><td>certificado-service</td><td>8088</td><td>Certificados</td></tr>
+    <tr><td>calificaciones-service</td><td>8089</td><td>Calificaciones / promedios</td></tr>
+    <tr><td>mysql</td><td>3307→3306</td><td>BD compartida <code>academia_noafer</code></td></tr>
+  </table>
+
+  <div class="card note">
+    <strong>Regla de oro:</strong> en producción/uso normal accede <strong>solo por el gateway <code>:8080</code></strong>.
+    Los puertos individuales existen para depurar, pero saltarse el gateway también te salta su validación de token.
+  </div>
+
+  <!-- ───────────────────────── AUTENTICACIÓN ───────────────────────── -->
+  <h2>2. Cómo funciona la autenticación (¡léelo primero!)</h2>
+  <ol>
+    <li><span class="step">Registro</span> → <code>POST /api/auth/registrar</code> con <code>run</code> + <code>clave</code>. <span class="pill">público</span></li>
+    <li><span class="step">Login</span> → <code>POST /api/auth/login</code> devuelve un <strong>JWT</strong> (HS256, válido 1 hora). <span class="pill">público</span></li>
+    <li><span class="step">Llamadas protegidas</span> → cualquier otra ruta <code>/api/**</code> exige cabecera
+        <code>Authorization: Bearer &lt;token&gt;</code>. El gateway valida el token y lo reenvía; el servicio lo vuelve a validar.</li>
+  </ol>
+  <table>
+    <tr><th>Ruta</th><th>¿Token?</th></tr>
+    <tr><td><code>/api/auth/**</code></td><td class="ok">No (público)</td></tr>
+    <tr><td><code>/swagger-ui.html</code>, <code>/v3/api-docs/**</code></td><td class="ok">No (público)</td></tr>
+    <tr><td>Todo lo demás <code>/api/**</code></td><td class="bad">Sí — Bearer JWT</td></tr>
+  </table>
+
+  <!-- ───────────────────────── POSTMAN ───────────────────────── -->
+  <h2>3. Usar la API desde Postman</h2>
+
+  <h3>Paso 1 — Registrar un usuario</h3>
+  <pre><code>POST http://localhost:8080/api/auth/registrar
+Content-Type: application/json
+
+{
+  "run": "11111111-1",
+  "clave": "secreta123"
+}</code></pre>
+  <p>Respuesta: <code>{ "message": "¡Usuario creado exitosamente!" }</code></p>
+
+  <h3>Paso 2 — Login y obtener el token</h3>
+  <pre><code>POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "run": "11111111-1",
+  "clave": "secreta123"
+}</code></pre>
+  <p>Respuesta:</p>
+  <pre><code>{
+  "status": "ok",
+  "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMTExMTExMS0xIiwi..."
+}</code></pre>
+
+  <h3>Paso 3 — Llamar a un endpoint protegido</h3>
+  <p>Pestaña <strong>Authorization</strong> → Type <strong>Bearer Token</strong> → pega el <code>token</code>. O bien a mano:</p>
+  <pre><code>GET http://localhost:8080/api/clases/listar
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMTExMTExMS0x...</code></pre>
+
+  <div class="card warn">
+    <strong>Ojo con la ruta y el método exactos.</strong> Cada controller define sus propias rutas; muchas listas son
+    <code>/listar</code> y no la ruta base. Si llamas a la ruta/método equivocados verás un <code>500</code>
+    (varios servicios envuelven el 404/405 como 500). <strong>Usa Swagger para ver la ruta y verbo correctos.</strong>
+  </div>
+
+  <h3>Rutas reales más usadas (vía gateway :8080)</h3>
+  <table>
+    <tr><th>Recurso</th><th>Listar</th><th>Por id</th><th>Crear</th></tr>
+    <tr><td>Clases</td><td><code>GET /api/clases/listar</code></td><td><code>GET /api/clases/{id}</code></td><td><code>POST /api/clases</code></td></tr>
+    <tr><td>Cursos</td><td><code>GET /api/cursos/listar</code></td><td><code>GET /api/cursos/{id}</code></td><td><code>POST /api/cursos</code></td></tr>
+    <tr><td>Categorías</td><td><code>GET /api/categorias/listar</code></td><td>—</td><td>—</td></tr>
+    <tr><td>Usuarios</td><td><code>GET /api/usuarios/listar</code></td><td><code>GET /api/usuarios/buscar/{id}</code></td><td><code>POST /api/usuarios/crear</code></td></tr>
+    <tr><td>Roles</td><td><code>GET /api/roles/listar</code></td><td><code>GET /api/roles/{id}</code></td><td><code>POST /api/roles/crear</code></td></tr>
+    <tr><td>Inscripciones</td><td><code>GET /api/inscripciones/listar</code></td><td>—</td><td>—</td></tr>
+    <tr><td>Pagos</td><td><code>GET /api/pagos</code></td><td>—</td><td>—</td></tr>
+  </table>
+  <p class="sub">La lista completa y exacta de cada servicio está siempre en Swagger.</p>
+
+  <div class="card warn">
+    <strong>Atajo útil en Postman:</strong> en la request de <em>login</em>, pestaña <em>Tests</em>, guarda el token en una variable:
+    <pre><code>pm.environment.set("token", pm.response.json().token);</code></pre>
+    Luego en las demás requests usa <code>Authorization: Bearer {{token}}</code> y no tendrás que copiarlo cada vez.
+  </div>
+
+  <h3>Matices (nuances) de Postman</h3>
+  <ul>
+    <li>Usa siempre <code>http://localhost:8080</code> (el gateway), <strong>no</strong> los puertos 808x directos.</li>
+    <li>El token <strong>expira en 1 hora</strong> → si empiezas a recibir <code>401</code>, vuelve a hacer login.</li>
+    <li><code>401</code> = token ausente/ inválido/ expirado. &nbsp; <code>403</code> = autenticado pero sin permiso. &nbsp; <code>404</code> = ruta no mapeada en el gateway.</li>
+    <li>No olvides <code>Content-Type: application/json</code> en los POST.</li>
+  </ul>
+
+  <!-- ───────────────────────── SWAGGER ───────────────────────── -->
+  <h2>4. Usar Swagger (agregado en el gateway)</h2>
+
+  <p>Abre en el navegador:</p>
+  <pre><code>http://localhost:8080/swagger-ui.html</code></pre>
+
+  <ol>
+    <li>Arriba a la derecha hay un <strong>desplegable</strong> para elegir el servicio
+        (1. Auth, 2. Calificaciones, … 8. Usuarios). Cada uno carga su documentación vía el gateway.</li>
+    <li>Para endpoints protegidos: primero ejecuta <code>POST /api/auth/login</code> desde el propio Swagger (servicio "Auth")
+        y copia el <code>token</code>.</li>
+    <li>Pulsa el botón <strong>Authorize</strong> 🔒 (arriba a la derecha), pega <strong>solo el token</strong>
+        (sin la palabra <code>Bearer</code>; el esquema <code>bearerAuth</code> ya la añade) y confirma.</li>
+    <li>Ahora usa <strong>Try it out → Execute</strong> en cualquier endpoint; Swagger enviará el header
+        <code>Authorization: Bearer …</code> automáticamente.</li>
+  </ol>
+
+  <h3>Matices (nuances) de Swagger</h3>
+  <ul>
+    <li>El Swagger del gateway <strong>agrega</strong> los docs de todos los servicios; cada servicio expone su propio
+        <code>/v3/api-docs</code> y el gateway los reescribe a <code>/v3/api-docs/&lt;servicio&gt;</code>.</li>
+    <li><code>/swagger-ui.html</code> responde <code>302</code> redirigiendo a <code>/swagger-ui/index.html</code> — es normal.</li>
+    <li>El botón <strong>Authorize</strong> aplica el token a <em>todas</em> las llamadas de esa pestaña hasta que cierres el navegador o pulses Logout.</li>
+    <li>Si el token expira (1 h), Swagger empezará a devolver <code>401</code> → vuelve a Authorize con un token nuevo.</li>
+    <li>Las rutas de "Try it out" salen por el gateway <code>:8080</code>, así que respetan el ruteo y la seguridad reales.</li>
+  </ul>
+
+  <!-- ───────────────────────── PROBLEMAS ───────────────────────── -->
+  <h2>5. Problemas conocidos / Troubleshooting</h2>
+  <table>
+    <tr><th>Síntoma</th><th>Causa / solución</th></tr>
+    <tr><td><code>401</code> en todo con token válido</td><td>Token expirado (1 h) → re-login. Verifica que apuntas a <code>:8080</code>.</td></tr>
+    <tr><td><code>500</code> en un GET que "debería existir"</td>
+        <td>Casi siempre es <strong>ruta o verbo incorrecto</strong> (p. ej. <code>/api/clases</code> en vez de
+            <code>/api/clases/listar</code>); algunos controllers devuelven 404/405 como 500. Revisa la ruta exacta en Swagger.</td></tr>
+    <tr><td>Tablas semilla vacías</td>
+        <td>El <code>data.sql</code> solo se carga con <code>spring.sql.init.mode=always</code>. Ya está activado en los
+            servicios con semillas (clases, inscripciones, evaluaciones, pago, user); los inserts usan <code>INSERT IGNORE</code> (re-ejecutables).</td></tr>
+    <tr><td>Un servicio queda <code>Exited (1)</code></td><td><code>docker compose logs &lt;servicio&gt;</code> para ver el stack trace.</td></tr>
+    <tr><td>Cambié código y no se refleja</td><td>Reconstruye: <code>docker compose up --build -d &lt;servicio&gt;</code>.</td></tr>
+    <tr><td>Quiero empezar con BD limpia</td>
+        <td><code>docker exec mysql mysql -uroot -proot -e "DROP DATABASE academia_noafer; CREATE DATABASE academia_noafer;"</code> y reinicia los servicios.</td></tr>
+  </table>
+
+  <div class="card note">
+    <strong>Arquitectura en una línea:</strong> el <em>gateway</em> (8080) es la única entrada; valida el JWT y rutea a cada
+    microservicio; todos comparten la BD <code>academia_noafer</code> y validan el mismo token (HS256, secreto en
+    <code>JWT_SECRET</code>/<code>SECRET</code>). La identidad de credenciales vive en <code>auth_usuarios</code>
+    (auth-service) y el perfil en <code>usuarios</code> (user-service), unidos por <code>run</code>.
+  </div>
+
+  <p class="sub" style="margin-top:40px; text-align:center;">Academia · generado para el proyecto Fullstack DuocUC</p>
+
+</div>
+</body>
+</html>

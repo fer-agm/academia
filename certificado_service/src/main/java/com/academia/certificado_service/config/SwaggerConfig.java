@@ -1,4 +1,4 @@
-package com.academia.user_service.config;
+package com.academia.certificado_service.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +19,7 @@ public OpenAPI customOpenAPI() {
 
 return new OpenAPI()
         .info(new Info()
-                .title("API 2026 Registro de usuarios")
+                .title("API 2026 Registro de certificados")
                 .version("1.0")
                 .description("Documentación de la API para el sistema de academia"))
         .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))

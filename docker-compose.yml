@@ -4,13 +4,13 @@ x-common-env: &common-env
   SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/academia_noafer
   SPRING_DATASOURCE_USERNAME: root
   SPRING_DATASOURCE_PASSWORD: root
-
 services:
+
   mysql:
     image: mysql:8
     container_name: mysql
     ports:
-      - "3306:3306" # Cambiado a 3306 estándar para evitar confusiones locales
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: academia_noafer
@@ -28,6 +28,15 @@ services:
       <<: *common-env
     depends_on:
       - auth-service
+      - calificaciones-service
+      - certificado-service
+      - clases-service
+      - evaluaciones-service
+      - inscripciones-service
+      - pago-service
+      - user-service
+
+
 
   pago-service:
     build: ./pago-service
@@ -38,7 +47,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-
   clases-service:
     build: ./clases-service
     ports:
@@ -89,6 +97,7 @@ services:
       mysql:
         condition: service_healthy
 
+
   certificado-service:
     build: ./certificado_service
     ports:
@@ -107,4 +116,4 @@ services:
       <<: *common-env      
     depends_on:
       mysql:
-        condition: service_healthy
+        condition: service_healthy      
