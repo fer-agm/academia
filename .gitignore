@@ -11,6 +11,10 @@ target/
 .settings/
 .classpath
 .project
+# NetBeans editor lock/backup files
+.LCK*~
+*~
+nbproject/private/
 
 # OS
 .DS_Store
