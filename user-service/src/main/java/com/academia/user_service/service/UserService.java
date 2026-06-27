@@ -1,7 +1,13 @@
 package com.academia.user_service.service;
 
+import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
 import com.academia.user_service.model.User;
 import com.academia.user_service.repository.UserRepository;
 import java.util.List;
@@ -10,10 +16,18 @@ import java.util.List;
 @Service
 public class UserService {
 
-    private final UserRepository userRepository;
+    /** Default password assigned to the auth credential created with each new user. */
+    private static final String DEFAULT_PASSWORD = "1234";
 
-    public UserService(UserRepository userRepository) {
+    private final UserRepository userRepository;
+    private final WebClient webClient;
+
+    @Value("${auth.service.url:http://auth-service:8087}")
+    private String authServiceUrl;
+
+    public UserService(UserRepository userRepository, WebClient webClient) {
         this.userRepository = userRepository;
+        this.webClient = webClient;
     }
 
     public User guardarUsuario(User user) {
@@ -23,7 +37,28 @@ public class UserService {
         }
         User saved = userRepository.save(user);
         log.info("[UserService] Usuario creado con ID: {}", saved.getId());
+        crearCredencialAuth(saved.getRun());
         return saved;
+    }
+
+    /**
+     * Provisions a login credential in auth-service for the given RUN with the default
+     * password so the new user can authenticate. Best-effort: a failure here (e.g. the
+     * credential already exists) must not fail user creation.
+     */
+    private void crearCredencialAuth(String run) {
+        try {
+            webClient.post()
+                    .uri(authServiceUrl + "/api/auth/registrar")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(Map.of("run", run, "clave", DEFAULT_PASSWORD))
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+            log.info("[UserService] Credencial de auth creada para RUN {} (clave por defecto: {})", run, DEFAULT_PASSWORD);
+        } catch (Exception e) {
+            log.warn("[UserService] No se pudo crear la credencial de auth para RUN {}: {}", run, e.getMessage());
+        }
     }
 
     public List<User> listarTodo() {
@@ -31,7 +66,7 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User buscarPorId(String id) {
+    public User buscarPorId(Long id) {
         log.info("[UserService] Buscando usuario con ID: {}", id);
         User user = userRepository.findById(id).orElse(null);
         if (user == null) {
@@ -45,7 +80,7 @@ public class UserService {
         return userRepository.findByRun(run).orElse(null);
     }
 
-    public User actualizarUsuario(String id, User nuevosDatos) {
+    public User actualizarUsuario(Long id, User nuevosDatos) {
         log.info("[UserService] Actualizando usuario con ID: {}", id);
         return userRepository.findById(id).map(user -> {
             user.setNombre(nuevosDatos.getNombre());
@@ -60,7 +95,7 @@ public class UserService {
         }).orElse(null);
     }
 
-    public boolean eliminarUsuario(String id) {
+    public boolean eliminarUsuario(Long id) {
         log.info("[UserService] Eliminando usuario con ID: {}", id);
         if (userRepository.existsById(id)) {
             userRepository.deleteById(id);

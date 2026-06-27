@@ -6,7 +6,7 @@ import com.academia.user_service.model.User;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, String> {
+public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByRun(String run);
 
     Optional<User> findByEmail(String email);
