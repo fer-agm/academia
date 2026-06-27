@@ -13,6 +13,10 @@ spring:
   main:
     web-application-type: reactive
 
+  security:
+    user:
+      name: disabled
+      password: disabled
 
   cloud:
     gateway:
@@ -20,65 +24,66 @@ spring:
         webflux:
           routes:
 
-            # - id: swagger-ui
-            #   uri: https://localhost:8080
-            #   predicates:
-            #     - Path=/swagger-ui/** 
-
-
-            - id: auth-service
-              uri: http://auth-service:8087
+            - id: swagger-ui
+              uri: https://localhost:8080
               predicates:
-                - Path=/api/auth/**,/v3/api-docs/auth
-              filters:
-                - RewritePath=/v3/api-docs/auth, /v3/api-docs
+                - Path=/swagger-ui/** 
+
 
             - id: calificaciones-service
               uri: http://calificaciones-service:8089
               predicates:
-                - Path=/api/calificaciones/**, /api/promedios/**, /v3/api-docs/calificaciones
+                - Path=/api/calificaciones/**, /v3/api-docs/calificaciones
               filters:
                 - RewritePath=/v3/api-docs/calificaciones, /v3/api-docs
 
             - id: certificado-service
               uri: http://certificado-service:8088
               predicates:
-                - Path=/api/certificados/**,/v3/api-docs/certificados
+                - Path=/api/certificados/**, /v3/api-docs/certificados
               filters:
                 - RewritePath=/v3/api-docs/certificados, /v3/api-docs
+
+            - id: auth-service
+              uri: http://auth-service:8087
+              predicates:
+                - Path=/api/auth/**, /v3/api-docs/auth
+              filters:
+                - RewritePath=/v3/api-docs/auth, /v3/api-docs
 
             - id: user-service
               uri: http://user-service:8086
               predicates:
-                - Path=/api/usuarios/**, /api/roles/**, /v3/api-docs/usuarios, /v3/api-docs/roles
-              filters:
-                - RewritePath=/v3/api-docs/usuarios, /v3/api-docs
+                - Path=/api/usuarios/**, /api/roles/**, /v3/api-docs/usuarios
+              filters: 
+              - RewritePath=/v3/api-docs/usuarios, /v3/api-docs
 
             - id: pago-service
               uri: http://pago-service:8082
               predicates:
-                - Path=/api/pagos/**, /api/transacciones/**, /v3/api-docs/pago, /v3/api-docs/pagos
+                - Path=/api/pagos/**, /api/transacciones/**, /v3/api-docs/pagos
               filters:
                 - RewritePath=/v3/api-docs/pagos, /v3/api-docs
 
             - id: clases-service
               uri: http://clases-service:8083
               predicates:
-                - Path=/api/cursos/**, /api/categorias/**, /api/clases/**, /v3/api-docs/cursos, /v3/api-docs/clases, /v3/api-docs/categorias
+                - Path=/api/cursos/**, /api/categorias/**, /api/clases/**, /v3/api-docs/clases
               filters:
                 - RewritePath=/v3/api-docs/clases, /v3/api-docs
 
             - id: evaluaciones-service
               uri: http://evaluaciones-service:8084
               predicates:
-                - Path=/api/evaluaciones/**, /api/preguntas/**, /api/alternativas/**, /v3/api-docs/evaluaciones
+                - Path=/api/examenes/**, /api/preguntas/**, /api/alternativas/**, /v3/api-docs/evaluaciones
               filters:
                 - RewritePath=/v3/api-docs/evaluaciones, /v3/api-docs
+
 
             - id: inscripciones-service
               uri: http://inscripciones-service:8085
               predicates:
-                - Path=/api/inscripciones/**, /api/cupos/**, /v3/api-docs/inscripciones, /v3/api-docs/cupos
+                - Path=/api/inscripciones/**, /api/cupos/**/v3/api-docs/inscripciones
               filters:
                 - RewritePath=/v3/api-docs/inscripciones, /v3/api-docs
 
@@ -87,24 +92,23 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
-    urls:
-      - name: 1. Autenticación (Auth)
-        url: /v3/api-docs/auth
-      - name: 2. Calificaciones
-        url: /v3/api-docs/calificaciones
-      - name: 3. Certificados
-        url: /v3/api-docs/certificados
-      - name: 4. Pagos
-        url: /v3/api-docs/pagos
-      - name: 5. Clases
-        url: /v3/api-docs/clases
-      - name: 6. Evaluaciones
-        url: /v3/api-docs/evaluaciones
-      - name: 7. Inscripciones
-        url: /v3/api-docs/inscripciones
-      - name: 8. Usuarios
-        url: /v3/api-docs/usuarios
-
+    use-root-path: true
+  swagger-ui.urls[0].name: 1. Autenticación (Auth)
+  swagger-ui.urls[0].url: /v3/api-docs/auth
+  swagger-ui.urls[1].name: 2. Calificaciones
+  swagger-ui.urls[1].url: /v3/api-docs/calificaciones
+  swagger-ui.urls[2].name: 3. Certificados
+  swagger-ui.urls[2].url: /v3/api-docs/certificados
+  swagger-ui.urls[3].name: 4. Usuarios
+  swagger-ui.urls[3].url: /v3/api-docs/usuarios
+  swagger-ui.urls[4].name: 5. Pagos
+  swagger-ui.urls[4].url: /v3/api-docs/pagos
+  swagger-ui.urls[5].name: 6. Clases y Cursos
+  swagger-ui.urls[5].url: /v3/api-docs/clases
+  swagger-ui.urls[6].name: 7. Evaluaciones
+  swagger-ui.urls[6].url: /v3/api-docs/evaluaciones
+  swagger-ui.urls[7].name: 8. Inscripciones
+  swagger-ui.urls[7].url: /v3/api-docs/inscripciones
 
 
 jwt:

@@ -18,18 +18,18 @@ public class UserDTO {
     @Pattern(regexp = "\\d{7,8}-[\\dkK]", message = "El RUN debe tener formato válido (ej: 12345678-9)")
     private String run;
 
-    @NotBlank(message = "El nombre no puede estar vacío")
     @Size(max = 100, message = "El nombre no puede superar 100 caracteres")
     private String nombre;
 
-    @NotBlank(message = "El apellido no puede estar vacío")
     private String apellido;
 
-    @NotBlank(message = "El email no puede estar vacío")
     @Email(message = "El email debe tener un formato válido")
     private String email;
 
     @NotBlank(message = "La clave no puede estar vacía")
     @Size(min = 4, message = "La clave debe tener al menos 4 caracteres")
     private String clave;
+
+
+
 }

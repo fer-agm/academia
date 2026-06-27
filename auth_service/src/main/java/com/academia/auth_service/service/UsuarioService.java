@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import com.academia.auth_service.model.Usuario;
 import com.academia.auth_service.repository.UsuarioRepository;
 
-
 @Service
 public class UsuarioService {
 
@@ -44,7 +43,10 @@ public class UsuarioService {
         usuario.setRun(run);
         // store SHA-1 hash of the password
         usuario.setClave(hashService.sha1(clave));
-        // nombre/apellido/email are left null here; they belong to user-service's profile.
+        usuario.setNombre("");
+        usuario.setApellido("");
+        usuario.setEmail(run+"@academia.cl");
+
         usuarioRepository.save(usuario);
 
         return "¡Usuario creado exitosamente!";
