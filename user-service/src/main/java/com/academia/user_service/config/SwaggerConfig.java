@@ -8,6 +8,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 @Configuration
 public class SwaggerConfig {
 
@@ -18,6 +19,7 @@ public OpenAPI customOpenAPI() {
 
 
 return new OpenAPI()
+        .addServersItem(new Server().url("/"))
         .info(new Info()
                 .title("API 2026 Registro de usuarios")
                 .version("1.0")
