@@ -1,27 +1,44 @@
 package com.academia.auth_service.model;
 
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * Credentials store for authentication only.
- * Profile data (email, nombre, apellido, ...) is owned by user-service.
- * The shared key across services is {@code run}.
- */
 @Entity
-@Table(name = "auth_usuarios")
+@Table(name = "usuarios")
 @Data
-@NoArgsConstructor
+@NoArgsConstructor  
 @AllArgsConstructor
+
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+
+
+    @Column(nullable = true)
+    private String email;
 
     @Column(nullable = false, unique = true)
     private String run;
 
     @Column(nullable = false)
     private String clave;
+
+    @Column(nullable = true)
+    private String nombre;
+    
+    @Column(nullable = true)
+    private String apellido;
+    
+
+  
 }

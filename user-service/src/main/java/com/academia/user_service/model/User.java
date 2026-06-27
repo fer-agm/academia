@@ -2,8 +2,10 @@ package com.academia.user_service.model;
 
 import java.sql.Date;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,11 +16,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-
+    
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
-    private Long id;
+    private String id; 
 
     @Column(unique = true, nullable = false)
     private String run; 
@@ -32,7 +32,6 @@ public class User {
     
     private String clave; 
     
-    @Column(unique = true)
     private String email;
     
     private Date fecha_Registro;
