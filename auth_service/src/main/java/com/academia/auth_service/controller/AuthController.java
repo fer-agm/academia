@@ -7,42 +7,36 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.academia.auth_service.dto.AuthRequest;
+import com.academia.auth_service.dto.LoginResponse;
+import com.academia.auth_service.dto.MessageResponse;
 import com.academia.auth_service.service.UsuarioService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/auth")
-
+@Tag(name = "Autenticación", description = "Registro y login de usuarios")
 public class AuthController {
 
     @Autowired
     private UsuarioService usuarioService;
 
+    @Operation(summary = "Iniciar sesión", description = "Valida run + clave y devuelve un token JWT válido por 1 hora.")
     @PostMapping("/login")
-    public java.util.Map<String,String> login(@RequestBody java.util.Map<String,String> request){
-        String run = request.get("run");
-        String clave = request.get("clave");
-        String token = usuarioService.login(run,clave);
-
-        java.util.Map<String, String> resp = new java.util.HashMap<>();
+    public LoginResponse login(@RequestBody AuthRequest request) {
+        String token = usuarioService.login(request.getRun(), request.getClave());
         if (token == null) {
-            resp.put("status", "error");
-            resp.put("token", "");
-        } else {
-            resp.put("status", "ok");
-            resp.put("token", token);
+            return new LoginResponse("error", "");
         }
-        return resp;
+        return new LoginResponse("ok", token);
     }
 
-@PostMapping("/registrar")
-public java.util.Map<String,String> register(@RequestBody java.util.Map<String,String> request ) {
-    String run = request.get("run");
-    String clave = request.get("clave");
-        String resultado = usuarioService.register(run, clave);
-
-        java.util.Map<String,String> resp = new java.util.HashMap<>();
-        resp.put("message", resultado);
-    return resp;
-}
-
+    @Operation(summary = "Registrar usuario", description = "Crea un usuario con run + clave.")
+    @PostMapping("/registrar")
+    public MessageResponse register(@RequestBody AuthRequest request) {
+        String resultado = usuarioService.register(request.getRun(), request.getClave());
+        return new MessageResponse(resultado);
+    }
 }
