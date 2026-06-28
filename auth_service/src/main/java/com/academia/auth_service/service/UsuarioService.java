@@ -17,18 +17,16 @@ public class UsuarioService {
     @Autowired
     private JwtService jwtService;
 
-    @Autowired
-    private HashService hashService;
-
-
-    public String login (String run, String clave) {
+    /**
+     * Valida run + clave contra la tabla 'usuarios' (administrada por user-service) y, si
+     * coinciden, devuelve un token JWT. La clave se compara en texto plano porque así se
+     * almacena en el perfil del usuario. Los usuarios se crean únicamente desde user-service.
+     */
+    public String login(String run, String clave) {
         Optional<Usuario> optUsuario = usuarioRepository.findByRun(run);
         if (!optUsuario.isPresent()) return null;
         Usuario usuario = optUsuario.get();
-        // compare SHA-1 hashes
-        String hashedInput = hashService.sha1(clave);
-        if (!hashedInput.equals(usuario.getClave())) return null;
-
+        if (clave == null || !clave.equals(usuario.getClave())) return null;
         return jwtService.generateToken(run);
     }
 
@@ -36,24 +34,4 @@ public class UsuarioService {
     public boolean existeUsuario(String run) {
         return usuarioRepository.findByRun(run).isPresent();
     }
-
-    public String register(String run, String clave) {
-        Optional<Usuario> existingOpt = usuarioRepository.findByRun(run);
-        if (existingOpt.isPresent()) {
-            return "¡Usuario ya existe!";
-                }
-
-
-        Usuario usuario = new Usuario();
-        usuario.setRun(run);
-        // store SHA-1 hash of the password
-        usuario.setClave(hashService.sha1(clave));
-        usuario.setNombre("");
-        usuario.setApellido("");
-        usuario.setEmail(run+"@academia.cl");
-
-        usuarioRepository.save(usuario);
-
-        return "¡Usuario creado exitosamente!";
-    }         
 }

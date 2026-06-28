@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.academia.auth_service.dto.AuthRequest;
 import com.academia.auth_service.dto.LoginResponse;
-import com.academia.auth_service.dto.MessageResponse;
 import com.academia.auth_service.service.UsuarioService;
 
 @ExtendWith(MockitoExtension.class)
@@ -96,44 +95,6 @@ class AuthControllerTest {
         assertEquals("Clave incorrecta", response.getMensaje());
         verify(usuarioService).login(run, clave);
         verify(usuarioService).existeUsuario(run);
-        verifyNoMoreInteractions(usuarioService);
-    }
-
-    // ---------- register ----------
-
-    @Test
-    void register_newUser_returnsSuccessMessage() {
-        // Given
-        String run = "22222222-2";
-        String clave = "1234";
-        AuthRequest request = buildRequest(run, clave);
-        when(usuarioService.register(run, clave)).thenReturn("¡Usuario creado exitosamente!");
-
-        // When
-        MessageResponse response = authController.register(request);
-
-        // Then
-        assertNotNull(response);
-        assertEquals("¡Usuario creado exitosamente!", response.getMessage());
-        verify(usuarioService).register(run, clave);
-        verifyNoMoreInteractions(usuarioService);
-    }
-
-    @Test
-    void register_existingUser_returnsAlreadyExistsMessage() {
-        // Given
-        String run = "33333333-3";
-        String clave = "1234";
-        AuthRequest request = buildRequest(run, clave);
-        when(usuarioService.register(run, clave)).thenReturn("¡Usuario ya existe!");
-
-        // When
-        MessageResponse response = authController.register(request);
-
-        // Then
-        assertNotNull(response);
-        assertEquals("¡Usuario ya existe!", response.getMessage());
-        verify(usuarioService).register(run, clave);
         verifyNoMoreInteractions(usuarioService);
     }
 }

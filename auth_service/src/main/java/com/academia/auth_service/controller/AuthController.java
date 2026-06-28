@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.academia.auth_service.dto.AuthRequest;
 import com.academia.auth_service.dto.LoginResponse;
-import com.academia.auth_service.dto.MessageResponse;
 import com.academia.auth_service.service.UsuarioService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,13 +19,13 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
-@Tag(name = "Autenticación", description = "Registro y login de usuarios")
+@Tag(name = "Autenticación", description = "Inicio de sesión y emisión de tokens JWT. Los usuarios se crean en user-service.")
 public class AuthController {
 
     @Autowired
     private UsuarioService usuarioService;
 
-    @Operation(summary = "Iniciar sesión", description = "Valida run + clave y devuelve un token JWT válido por 8 horas.")
+    @Operation(summary = "Iniciar sesión", description = "Valida run + clave contra los usuarios registrados y devuelve un token JWT válido por 8 horas.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Petición procesada. status=ok con token JWT si las credenciales son válidas; status=error y token vacío si no lo son"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos (run o clave en blanco)")
@@ -41,16 +40,5 @@ public class AuthController {
             return new LoginResponse("error", "", "Usuario no encontrado");
         }
         return new LoginResponse("error", "", "Clave incorrecta");
-    }
-
-    @Operation(summary = "Registrar usuario", description = "Crea un usuario con run + clave.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Petición procesada. Mensaje de éxito si se creó el usuario, o aviso de que el usuario ya existe"),
-            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos (run o clave en blanco)")
-    })
-    @PostMapping("/registrar")
-    public MessageResponse register(@Valid @RequestBody AuthRequest request) {
-        String resultado = usuarioService.register(request.getRun(), request.getClave());
-        return new MessageResponse(resultado);
     }
 }

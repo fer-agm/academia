@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -19,16 +18,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import com.academia.user_service.model.User;
 import com.academia.user_service.repository.RolRepository;
@@ -36,7 +31,7 @@ import com.academia.user_service.repository.UserRepository;
 
 /**
  * Pure Mockito unit tests for {@link UserService}.
- * No Spring context, no database, no real HTTP.
+ * No Spring context, no database.
  */
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -47,17 +42,8 @@ class UserServiceTest {
     @Mock
     private RolRepository rolRepository;
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private WebClient webClient;
-
     @InjectMocks
     private UserService userService;
-
-    @BeforeEach
-    void setUp() {
-        // The @Value field is not injected outside the Spring context, so set it manually.
-        ReflectionTestUtils.setField(userService, "authServiceUrl", "http://auth");
-    }
 
     private User buildUser() {
         User user = new User();
@@ -72,26 +58,14 @@ class UserServiceTest {
         return user;
     }
 
-    /** Stub the full POST chain so the best-effort auth mirror call returns without HTTP. */
-    private void stubWebClientSuccess() {
-        when(webClient.post()
-                .uri(anyString())
-                .contentType(any())
-                .bodyValue(any())
-                .retrieve()
-                .toBodilessEntity()
-                .block()).thenReturn(null);
-    }
-
     @Test
-    @DisplayName("guardarUsuario: persists the user and mirrors the credential to auth-service")
-    void guardarUsuario_savesUserAndTriggersAuthMirror() {
+    @DisplayName("guardarUsuario: persists the user")
+    void guardarUsuario_savesUser() {
         // Given
         User user = buildUser();
         user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
         when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.save(user)).thenReturn(user);
-        stubWebClientSuccess();
 
         // When
         User result = userService.guardarUsuario(user);
@@ -100,9 +74,6 @@ class UserServiceTest {
         assertNotNull(result);
         assertSame(user, result);
         verify(userRepository, times(1)).save(user);
-        // Auth mirror reached the terminal block() call exactly once.
-        verify(webClient.post().uri(anyString()).contentType(any()).bodyValue(any())
-                .retrieve().toBodilessEntity(), times(1)).block();
     }
 
     @Test
@@ -113,7 +84,6 @@ class UserServiceTest {
         user.setFecha_Registro(null);
         when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        stubWebClientSuccess();
 
         // When
         User result = userService.guardarUsuario(user);
@@ -132,39 +102,12 @@ class UserServiceTest {
         user.setFecha_Registro(original);
         when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        stubWebClientSuccess();
 
         // When
         User result = userService.guardarUsuario(user);
 
         // Then
         assertSame(original, result.getFecha_Registro());
-        verify(userRepository, times(1)).save(user);
-    }
-
-    @Test
-    @DisplayName("guardarUsuario: still succeeds when the auth mirror (WebClient) throws")
-    void guardarUsuario_succeedsWhenAuthMirrorThrows() {
-        // Given
-        User user = buildUser();
-        user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
-        when(rolRepository.existsById(any())).thenReturn(true);
-        when(userRepository.save(user)).thenReturn(user);
-        // crearCredencialAuth is best-effort (try/catch): a WebClient failure must not break creation.
-        when(webClient.post()
-                .uri(anyString())
-                .contentType(any())
-                .bodyValue(any())
-                .retrieve()
-                .toBodilessEntity()
-                .block()).thenThrow(new RuntimeException("auth-service down"));
-
-        // When
-        User result = userService.guardarUsuario(user);
-
-        // Then
-        assertNotNull(result);
-        assertSame(user, result);
         verify(userRepository, times(1)).save(user);
     }
 

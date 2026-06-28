@@ -12,8 +12,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// Lee la tabla 'usuarios' (única fuente de verdad, administrada por user-service).
+// auth-service solo valida credenciales y emite el token; no crea ni modifica usuarios.
 @Entity
-@Table(name = "auth_usuarios")
+@Table(name = "usuarios")
 @Data
 @NoArgsConstructor  
 @AllArgsConstructor
