@@ -6,36 +6,38 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.academia.evaluaciones_service.model.Preguntas;
+import com.academia.evaluaciones_service.repository.EvaluacionesRepository;
 import com.academia.evaluaciones_service.repository.PreguntasRepository;
 
 @Service
-
 public class PreguntasService {
     private final PreguntasRepository preguntasRepository;
+    private final EvaluacionesRepository evaluacionesRepository;
 
-    public PreguntasService(PreguntasRepository preguntasRepository){
+    public PreguntasService(PreguntasRepository preguntasRepository,
+            EvaluacionesRepository evaluacionesRepository) {
         this.preguntasRepository = preguntasRepository;
+        this.evaluacionesRepository = evaluacionesRepository;
+    }
 
-}
+    public List<Preguntas> getAll() {
+        return preguntasRepository.findAll();
+    }
 
-public List<Preguntas> getAll() {
-    return preguntasRepository.findAll();
-}
+    public Optional<Preguntas> getById(Long id) {
+        return preguntasRepository.findById(id);
+    }
 
-public Optional<Preguntas> getById(Long id) {
-    return preguntasRepository.findById(id);
-}
-
-public Preguntas guardar (Preguntas preguntas){
+    public Preguntas guardar(Preguntas preguntas) {
+        if (preguntas.getIdEvaluacion() == null
+                || !evaluacionesRepository.existsById(preguntas.getIdEvaluacion())) {
+            throw new IllegalArgumentException(
+                    "La evaluación con id " + preguntas.getIdEvaluacion() + " no existe");
+        }
         return preguntasRepository.save(preguntas);
     }
 
-
-    public void borrar (Long id){
+    public void borrar(Long id) {
         preguntasRepository.deleteById(id);
     }
-
-
-
-
 }

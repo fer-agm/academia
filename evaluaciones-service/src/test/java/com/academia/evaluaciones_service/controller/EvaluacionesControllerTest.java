@@ -106,20 +106,35 @@ class EvaluacionesControllerTest {
     }
 
     @Test
+    void existe_returnsOkWithBoolean() {
+        // Given
+        when(evaluacionesService.existe(1L)).thenReturn(true);
+
+        // When
+        ResponseEntity<Boolean> response = evaluacionesController.existe(1L);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(Boolean.TRUE, response.getBody());
+        verify(evaluacionesService, times(1)).existe(1L);
+    }
+
+    @Test
     void crearEvaluacion_returnsOkWithSavedEntity() {
         // Given
         Evaluaciones toSave = sampleEvaluacion();
         Evaluaciones saved = sampleEvaluacion();
-        when(evaluacionesService.guardar(toSave)).thenReturn(saved);
+        when(evaluacionesService.guardar(toSave, "Bearer token")).thenReturn(saved);
 
         // When
-        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.crearEvaluacion(toSave);
+        ResponseEntity<EntityModel<Evaluaciones>> response =
+                evaluacionesController.crearEvaluacion(toSave, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(saved, response.getBody().getContent());
         assertTrue(response.getBody().getLink(IanaLinkRelations.SELF).isPresent());
-        verify(evaluacionesService, times(1)).guardar(toSave);
+        verify(evaluacionesService, times(1)).guardar(toSave, "Bearer token");
     }
 
     @Test
@@ -128,10 +143,11 @@ class EvaluacionesControllerTest {
         Evaluaciones existing = sampleEvaluacion();
         Evaluaciones incoming = new Evaluaciones(null, 7L, 50, 90);
         when(evaluacionesService.getEvaluacionById(1L)).thenReturn(Optional.of(existing));
-        when(evaluacionesService.guardar(any(Evaluaciones.class))).thenReturn(incoming);
+        when(evaluacionesService.guardar(any(Evaluaciones.class), any())).thenReturn(incoming);
 
         // When
-        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.actualizar(1L, incoming);
+        ResponseEntity<EntityModel<Evaluaciones>> response =
+                evaluacionesController.actualizar(1L, incoming, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -139,7 +155,7 @@ class EvaluacionesControllerTest {
         assertTrue(response.getBody().getLink(IanaLinkRelations.SELF).isPresent());
         assertEquals(1L, incoming.getIdEvaluacion());
         verify(evaluacionesService, times(1)).getEvaluacionById(1L);
-        verify(evaluacionesService, times(1)).guardar(incoming);
+        verify(evaluacionesService, times(1)).guardar(incoming, "Bearer token");
     }
 
     @Test
@@ -149,13 +165,14 @@ class EvaluacionesControllerTest {
         when(evaluacionesService.getEvaluacionById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.actualizar(99L, incoming);
+        ResponseEntity<EntityModel<Evaluaciones>> response =
+                evaluacionesController.actualizar(99L, incoming, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNull(response.getBody());
         verify(evaluacionesService, times(1)).getEvaluacionById(99L);
-        verify(evaluacionesService, never()).guardar(any(Evaluaciones.class));
+        verify(evaluacionesService, never()).guardar(any(Evaluaciones.class), any());
     }
 
     @Test

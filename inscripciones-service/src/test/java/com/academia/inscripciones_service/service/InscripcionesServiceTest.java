@@ -9,6 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -41,8 +44,17 @@ class InscripcionesServiceTest {
     @Mock
     private InscripcionesRepository inscripcionesRepository;
 
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    @Mock
     private WebClient webClient;
+
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
 
     @InjectMocks
     private InscripcionesService inscripcionesService;
@@ -51,9 +63,42 @@ class InscripcionesServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Given: inject the @Value field and a baseline entity
+        // Given: inject the @Value fields and a baseline entity
         ReflectionTestUtils.setField(inscripcionesService, "clasesServiceUrl", "http://localhost:8081");
+        ReflectionTestUtils.setField(inscripcionesService, "cursoExistsUrl", "http://gateway/api/cursos/%d/existe");
+        ReflectionTestUtils.setField(inscripcionesService, "usuarioExistsUrl", "http://gateway/api/usuarios/run/%s/existe");
         inscripcion = new Inscripciones(1L, "11.111.111-1", 100L, LocalDateTime.now(), "ACTIVO");
+    }
+
+    /**
+     * Stubs the reactive WebClient chain used by crearInscripcionConValidaciones
+     * (.get().uri().retrieve().bodyToMono(Void.class)) returning {@code mono}.
+     */
+    @SuppressWarnings("unchecked")
+    private void stubReactivoVoid(Mono<Void> mono) {
+        lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
+        lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        lenient().doReturn(mono).when(responseSpec).bodyToMono(Void.class);
+    }
+
+    /**
+     * Stubs the blocking WebClient existence chain used by crearInscripcion.
+     * Distinguishes the curso call (URI contains "/cursos/") from the estudiante
+     * call (URI contains "/usuarios/") so each can return a different Boolean.
+     */
+    @SuppressWarnings("unchecked")
+    private void stubExistencia(Boolean cursoExiste, Boolean estudianteExiste) {
+        Mono<Boolean> cursoMono = mock(Mono.class);
+        Mono<Boolean> estudianteMono = mock(Mono.class);
+        lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(contains("/cursos/"));
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(contains("/usuarios/"));
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersSpec).headers(any());
+        lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        lenient().doReturn(cursoMono).doReturn(estudianteMono).when(responseSpec).bodyToMono(Boolean.class);
+        lenient().doReturn(cursoExiste).when(cursoMono).block();
+        lenient().doReturn(estudianteExiste).when(estudianteMono).block();
     }
 
     @Test
@@ -108,10 +153,11 @@ class InscripcionesServiceTest {
     void crearInscripcion_conEstado() {
         // Given
         Inscripciones nueva = new Inscripciones(null, "33.333.333-3", 300L, null, "PENDIENTE");
+        stubExistencia(true, true);
         when(inscripcionesRepository.save(any(Inscripciones.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
-        Inscripciones resultado = inscripcionesService.crearInscripcion(nueva);
+        Inscripciones resultado = inscripcionesService.crearInscripcion(nueva, "Bearer token");
 
         // Then
         assertNotNull(resultado);
@@ -125,16 +171,45 @@ class InscripcionesServiceTest {
     void crearInscripcion_estadoPorDefecto() {
         // Given
         Inscripciones nueva = new Inscripciones(null, "44.444.444-4", 400L, null, null);
+        stubExistencia(true, true);
         when(inscripcionesRepository.save(any(Inscripciones.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
-        Inscripciones resultado = inscripcionesService.crearInscripcion(nueva);
+        Inscripciones resultado = inscripcionesService.crearInscripcion(nueva, "Bearer token");
 
         // Then
         assertNotNull(resultado);
         assertEquals("ACTIVO", resultado.getEstado());
         assertNotNull(resultado.getFecha_inscripcion());
         verify(inscripcionesRepository).save(nueva);
+    }
+
+    @Test
+    @DisplayName("crearInscripcion lanza error y no guarda cuando el curso no existe")
+    void crearInscripcion_cursoInexistente() {
+        // Given: el curso no existe (falla antes de validar el estudiante)
+        Inscripciones nueva = new Inscripciones(null, "55.555.555-5", 500L, null, null);
+        stubExistencia(false, true);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> inscripcionesService.crearInscripcion(nueva, "Bearer token"));
+        assertEquals("El curso con id 500 no existe", ex.getMessage());
+        verify(inscripcionesRepository, never()).save(any(Inscripciones.class));
+    }
+
+    @Test
+    @DisplayName("crearInscripcion lanza error y no guarda cuando el estudiante no existe")
+    void crearInscripcion_estudianteInexistente() {
+        // Given: el curso existe pero el estudiante no
+        Inscripciones nueva = new Inscripciones(null, "66.666.666-6", 600L, null, null);
+        stubExistencia(true, false);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> inscripcionesService.crearInscripcion(nueva, "Bearer token"));
+        assertEquals("El estudiante con RUN 66.666.666-6 no existe", ex.getMessage());
+        verify(inscripcionesRepository, never()).save(any(Inscripciones.class));
     }
 
     @Test
@@ -239,11 +314,7 @@ class InscripcionesServiceTest {
     void crearInscripcionConValidaciones_cursoValido() {
         // Given
         Inscripciones nueva = new Inscripciones(null, "55.555.555-5", 500L, null, null);
-        when(webClient.get()
-                .uri(anyString())
-                .retrieve()
-                .bodyToMono(Void.class))
-                .thenReturn(Mono.empty());
+        stubReactivoVoid(Mono.empty());
         when(inscripcionesRepository.save(any(Inscripciones.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
@@ -264,11 +335,7 @@ class InscripcionesServiceTest {
     void crearInscripcionConValidaciones_respetaEstado() {
         // Given
         Inscripciones nueva = new Inscripciones(null, "66.666.666-6", 600L, null, "PENDIENTE");
-        when(webClient.get()
-                .uri(anyString())
-                .retrieve()
-                .bodyToMono(Void.class))
-                .thenReturn(Mono.empty());
+        stubReactivoVoid(Mono.empty());
         when(inscripcionesRepository.save(any(Inscripciones.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
@@ -286,11 +353,7 @@ class InscripcionesServiceTest {
     void crearInscripcionConValidaciones_cursoInvalido() {
         // Given
         Inscripciones nueva = new Inscripciones(null, "77.777.777-7", 700L, null, null);
-        when(webClient.get()
-                .uri(anyString())
-                .retrieve()
-                .bodyToMono(Void.class))
-                .thenReturn(Mono.error(new RuntimeException("404 Not Found")));
+        stubReactivoVoid(Mono.error(new RuntimeException("404 Not Found")));
 
         // When
         Mono<Map<String, Object>> mono = inscripcionesService.crearInscripcionConValidaciones(nueva);

@@ -195,17 +195,17 @@ class CertificadoControllerTest {
         // Given
         Certificado entrante = buildCertificado(null, "E1", 10L, null, null);
         Certificado generado = buildCertificado(100L, "E1", 10L, LocalDateTime.now(), "SAVED001");
-        when(certificadoService.generarCertificado(entrante)).thenReturn(generado);
+        when(certificadoService.generarCertificado(entrante, "Bearer token")).thenReturn(generado);
 
         // When
-        ResponseEntity<EntityModel<Certificado>> response = controller.crear(entrante);
+        ResponseEntity<EntityModel<Certificado>> response = controller.crear(entrante, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertSame(generado, response.getBody().getContent());
         assertTrue(response.getBody().getLink("self").isPresent());
-        verify(certificadoService, times(1)).generarCertificado(entrante);
+        verify(certificadoService, times(1)).generarCertificado(entrante, "Bearer token");
     }
 
     // ---------- actualizar (PUT /{id}) ----------
@@ -217,10 +217,10 @@ class CertificadoControllerTest {
         Certificado entrante = buildCertificado(null, "E7-mod", 71L, null, null);
         Certificado guardado = buildCertificado(7L, "E7-mod", 71L, LocalDateTime.now(), "CODE0007");
         when(certificadoService.getById(7L)).thenReturn(Optional.of(existente));
-        when(certificadoService.generarCertificado(any(Certificado.class))).thenReturn(guardado);
+        when(certificadoService.generarCertificado(any(Certificado.class), any())).thenReturn(guardado);
 
         // When
-        ResponseEntity<EntityModel<Certificado>> response = controller.actualizar(7L, entrante);
+        ResponseEntity<EntityModel<Certificado>> response = controller.actualizar(7L, entrante, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -230,7 +230,7 @@ class CertificadoControllerTest {
         // El id de la URL debe haberse seteado en el cuerpo entrante antes de guardar
         assertEquals(7L, entrante.getIdCertificado());
         verify(certificadoService, times(1)).getById(7L);
-        verify(certificadoService, times(1)).generarCertificado(entrante);
+        verify(certificadoService, times(1)).generarCertificado(entrante, "Bearer token");
     }
 
     @Test
@@ -240,13 +240,13 @@ class CertificadoControllerTest {
         when(certificadoService.getById(15L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<EntityModel<Certificado>> response = controller.actualizar(15L, entrante);
+        ResponseEntity<EntityModel<Certificado>> response = controller.actualizar(15L, entrante, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNull(response.getBody());
         verify(certificadoService, times(1)).getById(15L);
-        verify(certificadoService, never()).generarCertificado(any(Certificado.class));
+        verify(certificadoService, never()).generarCertificado(any(Certificado.class), any());
     }
 
     // ---------- borrar (DELETE /{id}) ----------

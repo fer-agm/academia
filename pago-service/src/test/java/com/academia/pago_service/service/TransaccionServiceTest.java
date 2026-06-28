@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,7 +26,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.academia.pago_service.exception.BadRequestException;
+import com.academia.pago_service.model.Pago;
 import com.academia.pago_service.model.Transaccion;
+import com.academia.pago_service.repository.PagoRepository;
 import com.academia.pago_service.repository.TransaccionRepository;
 
 /**
@@ -37,6 +42,9 @@ class TransaccionServiceTest {
     @Mock
     private TransaccionRepository transaccionRepository;
 
+    @Mock
+    private PagoRepository pagoRepository;
+
     @InjectMocks
     private TransaccionService transaccionService;
 
@@ -44,6 +52,10 @@ class TransaccionServiceTest {
         Transaccion t = new Transaccion();
         t.setId_transaccion(id);
         t.setMetodo(metodo);
+        // Cada transacción referencia un Pago existente (id_pago=1)
+        Pago pago = new Pago();
+        pago.setId_pago(1L);
+        t.setPago(pago);
         return t;
     }
 
@@ -110,6 +122,7 @@ class TransaccionServiceTest {
     void registrarTransaccion_sinFecha_asignaFecha() {
         // Given
         Transaccion t = nuevaTransaccion(null, "TARJETA_CREDITO");
+        when(pagoRepository.existsById(anyLong())).thenReturn(true);
         when(transaccionRepository.save(any(Transaccion.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
@@ -127,6 +140,7 @@ class TransaccionServiceTest {
         LocalDateTime fecha = LocalDateTime.of(2021, 5, 5, 10, 30);
         Transaccion t = nuevaTransaccion(null, "DEBITO");
         t.setFecha(fecha);
+        when(pagoRepository.existsById(anyLong())).thenReturn(true);
         when(transaccionRepository.save(any(Transaccion.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
@@ -135,6 +149,32 @@ class TransaccionServiceTest {
         // Then
         assertEquals(fecha, resultado.getFecha());
         verify(transaccionRepository).save(t);
+    }
+
+    @Test
+    @DisplayName("registrarTransaccion: pago referenciado no existe -> lanza BadRequestException y no guarda")
+    void registrarTransaccion_pagoNoExiste_lanza() {
+        // Given
+        Transaccion t = nuevaTransaccion(null, "TARJETA_CREDITO");
+        when(pagoRepository.existsById(anyLong())).thenReturn(false);
+
+        // When / Then
+        assertThrows(BadRequestException.class,
+                () -> transaccionService.registrarTransaccion(t));
+        verify(transaccionRepository, never()).save(any(Transaccion.class));
+    }
+
+    @Test
+    @DisplayName("registrarTransaccion: pago nulo -> lanza BadRequestException y no guarda")
+    void registrarTransaccion_pagoNulo_lanza() {
+        // Given
+        Transaccion t = nuevaTransaccion(null, "TARJETA_CREDITO");
+        t.setPago(null);
+
+        // When / Then
+        assertThrows(BadRequestException.class,
+                () -> transaccionService.registrarTransaccion(t));
+        verify(transaccionRepository, never()).save(any(Transaccion.class));
     }
 
     // ---------------------------------------------------------------------

@@ -3,6 +3,7 @@ package com.academia.clases_service.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -25,12 +26,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.academia.clases_service.model.Clase;
 import com.academia.clases_service.repository.ClaseRepository;
+import com.academia.clases_service.repository.CursoRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ClaseServiceTest {
 
     @Mock
     private ClaseRepository claseRepository;
+
+    @Mock
+    private CursoRepository cursoRepository;
 
     @InjectMocks
     private ClaseService claseService;
@@ -137,6 +142,7 @@ class ClaseServiceTest {
         // Given
         Clase toSave = new Clase(null, "Nueva clase", "Contenido nuevo", 45, 0L, 10L);
         Clase saved = new Clase(7L, "Nueva clase", "Contenido nuevo", 45, 0L, 10L);
+        when(cursoRepository.existsById(10L)).thenReturn(true);
         when(claseRepository.save(toSave)).thenReturn(saved);
 
         // When
@@ -146,6 +152,17 @@ class ClaseServiceTest {
         assertEquals(7L, result.getIdClase());
         assertEquals("Nueva clase", result.getNombreClase());
         verify(claseRepository).save(toSave);
+    }
+
+    @Test
+    void guardar_throwsWhenCursoDoesNotExist() {
+        // Given
+        Clase toSave = new Clase(null, "Nueva clase", "Contenido nuevo", 45, 0L, 999L);
+        when(cursoRepository.existsById(999L)).thenReturn(false);
+
+        // When / Then
+        assertThrows(IllegalArgumentException.class, () -> claseService.guardar(toSave));
+        verify(claseRepository, never()).save(any(Clase.class));
     }
 
     @Test

@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -55,4 +56,9 @@ public class User {
 
     @Schema(description = "Fecha de registro del usuario (asignada automáticamente)", example = "2026-06-27", accessMode = Schema.AccessMode.READ_ONLY)
     private Date fecha_Registro;
+
+    @Column(name = "id_rol")
+    @NotNull(message = "El rol es obligatorio")
+    @Schema(description = "Identificador del rol del usuario", example = "1")
+    private Long idRol;
 }

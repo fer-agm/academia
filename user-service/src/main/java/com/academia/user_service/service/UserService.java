@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.academia.user_service.model.User;
 import com.academia.user_service.repository.UserRepository;
+import com.academia.user_service.repository.RolRepository;
 import java.util.List;
 
 @Slf4j
@@ -20,18 +21,23 @@ public class UserService {
     private static final String DEFAULT_PASSWORD = "1234";
 
     private final UserRepository userRepository;
+    private final RolRepository rolRepository;
     private final WebClient webClient;
 
     @Value("${auth.service.url:http://auth-service:8087}")
     private String authServiceUrl;
 
-    public UserService(UserRepository userRepository, WebClient webClient) {
+    public UserService(UserRepository userRepository, RolRepository rolRepository, WebClient webClient) {
         this.userRepository = userRepository;
+        this.rolRepository = rolRepository;
         this.webClient = webClient;
     }
 
     public User guardarUsuario(User user) {
         log.info("[UserService] Creando usuario con RUN: {}", user.getRun());
+        if (user.getIdRol() == null || !rolRepository.existsById(user.getIdRol())) {
+            throw new IllegalArgumentException("El rol con id " + user.getIdRol() + " no existe");
+        }
         user.setId(null); // el id lo genera la BD (autoincremental); se ignora el que envíe el cliente
         if (user.getFecha_Registro() == null) {
             user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
@@ -82,14 +88,22 @@ public class UserService {
         return userRepository.findByRun(run).orElse(null);
     }
 
+    public boolean existePorRun(String run) {
+        return userRepository.findByRun(run).isPresent();
+    }
+
     public User actualizarUsuario(Long id, User nuevosDatos) {
         log.info("[UserService] Actualizando usuario con ID: {}", id);
+        if (nuevosDatos.getIdRol() == null || !rolRepository.existsById(nuevosDatos.getIdRol())) {
+            throw new IllegalArgumentException("El rol con id " + nuevosDatos.getIdRol() + " no existe");
+        }
         return userRepository.findById(id).map(user -> {
             user.setNombre(nuevosDatos.getNombre());
             user.setApellido(nuevosDatos.getApellido());
             user.setUsuario(nuevosDatos.getUsuario());
             user.setClave(nuevosDatos.getClave());
             user.setEmail(nuevosDatos.getEmail());
+            user.setIdRol(nuevosDatos.getIdRol());
             User updated = userRepository.save(user);
             log.info("[UserService] Usuario con ID {} actualizado", id);
             return updated;

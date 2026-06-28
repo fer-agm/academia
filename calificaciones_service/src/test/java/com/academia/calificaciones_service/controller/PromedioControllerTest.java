@@ -133,16 +133,16 @@ class PromedioControllerTest {
         // Given
         PromedioDTO input = new PromedioDTO(null, 100L, "EST-003", 5.5, 3);
         PromedioDTO saved = buildDto(5L);
-        when(promedioService.guardar(input)).thenReturn(saved);
+        when(promedioService.guardar(input, "Bearer token")).thenReturn(saved);
 
         // When
-        ResponseEntity<PromedioDTO> response = controller.crear(input);
+        ResponseEntity<PromedioDTO> response = controller.crear(input, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(5L, response.getBody().getIdPromedio());
-        verify(promedioService).guardar(input);
+        verify(promedioService).guardar(input, "Bearer token");
         verifyNoMoreInteractions(promedioService);
     }
 
@@ -153,10 +153,10 @@ class PromedioControllerTest {
         PromedioDTO input = new PromedioDTO(null, 200L, "EST-009", 6.2, 5);
         PromedioDTO saved = buildDto(id);
         when(promedioService.getById(id)).thenReturn(Optional.of(buildDto(id)));
-        when(promedioService.guardar(any(PromedioDTO.class))).thenReturn(saved);
+        when(promedioService.guardar(any(PromedioDTO.class), any())).thenReturn(saved);
 
         // When
-        ResponseEntity<PromedioDTO> response = controller.actualizar(id, input);
+        ResponseEntity<PromedioDTO> response = controller.actualizar(id, input, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -165,7 +165,7 @@ class PromedioControllerTest {
         // controller forces the path id onto the incoming dto before saving
         assertEquals(id, input.getIdPromedio());
         verify(promedioService).getById(id);
-        verify(promedioService).guardar(input);
+        verify(promedioService).guardar(input, "Bearer token");
     }
 
     @Test
@@ -176,13 +176,13 @@ class PromedioControllerTest {
         when(promedioService.getById(id)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<PromedioDTO> response = controller.actualizar(id, input);
+        ResponseEntity<PromedioDTO> response = controller.actualizar(id, input, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNull(response.getBody());
         verify(promedioService).getById(id);
-        verify(promedioService, never()).guardar(any());
+        verify(promedioService, never()).guardar(any(), any());
     }
 
     @Test

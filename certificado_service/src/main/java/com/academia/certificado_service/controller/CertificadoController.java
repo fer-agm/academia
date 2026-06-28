@@ -93,8 +93,10 @@ public class CertificadoController {
             @ApiResponse(responseCode = "400", description = "Datos del certificado inválidos")
     })
     @PostMapping("/generar")
-    public ResponseEntity<EntityModel<Certificado>> crear(@Valid @RequestBody Certificado certificado) {
-        Certificado generado = certificadoService.generarCertificado(certificado);
+    public ResponseEntity<EntityModel<Certificado>> crear(
+            @Valid @RequestBody Certificado certificado,
+            @RequestHeader(value = org.springframework.http.HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        Certificado generado = certificadoService.generarCertificado(certificado, authHeader);
         return ResponseEntity.ok(toModel(generado));
     }
 
@@ -109,11 +111,12 @@ public class CertificadoController {
     public ResponseEntity<EntityModel<Certificado>> actualizar(
             @Parameter(description = "Identificador único del certificado a actualizar", example = "1")
             @PathVariable Long id,
-            @Valid @RequestBody Certificado certificado) {
+            @Valid @RequestBody Certificado certificado,
+            @RequestHeader(value = org.springframework.http.HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         return certificadoService.getById(id)
                 .map(existing -> {
                     certificado.setIdCertificado(id); // Setea el ID proveniente de la URL
-                    return ResponseEntity.ok(toModel(certificadoService.generarCertificado(certificado)));
+                    return ResponseEntity.ok(toModel(certificadoService.generarCertificado(certificado, authHeader)));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -27,8 +27,14 @@ public class InscripcionesService {
     @Value("${clases.service.url}")
     private String clasesServiceUrl;
 
+    @Value("${api.curso.exists}")
+    private String cursoExistsUrl;
 
-    
+    @Value("${api.usuario.exists}")
+    private String usuarioExistsUrl;
+
+
+
 
     public InscripcionesService(InscripcionesRepository inscripcionesRepository, WebClient webClient) {
         this.inscripcionesRepository = inscripcionesRepository;
@@ -73,8 +79,10 @@ public Mono<Map<String,Object>> crearInscripcionConValidaciones(Inscripciones in
         return ins;
     }
 
-    public Inscripciones crearInscripcion(Inscripciones inscripciones) {
+    public Inscripciones crearInscripcion(Inscripciones inscripciones, String authHeader) {
         log.info("[InscripcionesService] Creando inscripción para estudiante: {}", inscripciones.getIdEstudiante());
+        validarCurso(inscripciones.getIdCurso(), authHeader);
+        validarEstudiante(inscripciones.getIdEstudiante(), authHeader);
         inscripciones.setFecha_inscripcion(LocalDateTime.now());
         if (inscripciones.getEstado() == null) {
             inscripciones.setEstado("ACTIVO");
@@ -82,6 +90,34 @@ public Mono<Map<String,Object>> crearInscripcionConValidaciones(Inscripciones in
         Inscripciones saved = inscripcionesRepository.save(inscripciones);
         log.info("[InscripcionesService] Inscripción creada con ID: {}", saved.getId_inscripcion());
         return saved;
+    }
+
+    private void validarCurso(Long idCurso, String authHeader) {
+        log.info("[InscripcionesService] Validando existencia del curso con id: {}", idCurso);
+        Boolean existe = webClient.get()
+                .uri(String.format(cursoExistsUrl, idCurso))
+                .headers(h -> { if (authHeader != null) h.set("Authorization", authHeader); })
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+        if (!Boolean.TRUE.equals(existe)) {
+            log.warn("[InscripcionesService] El curso con id {} no existe", idCurso);
+            throw new IllegalArgumentException("El curso con id " + idCurso + " no existe");
+        }
+    }
+
+    private void validarEstudiante(String run, String authHeader) {
+        log.info("[InscripcionesService] Validando existencia del estudiante con RUN: {}", run);
+        Boolean existe = webClient.get()
+                .uri(String.format(usuarioExistsUrl, run))
+                .headers(h -> { if (authHeader != null) h.set("Authorization", authHeader); })
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+        if (!Boolean.TRUE.equals(existe)) {
+            log.warn("[InscripcionesService] El estudiante con RUN {} no existe", run);
+            throw new IllegalArgumentException("El estudiante con RUN " + run + " no existe");
+        }
     }
 
     public List<Inscripciones> listarPorEstudiante(String run) {

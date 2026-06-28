@@ -25,6 +25,9 @@ public class PagoService {
     @Value("${api.curso.exists}")
     private String cursoPath;
 
+    @Value("${api.usuario.exists}")
+    private String usuarioExistsUrl;
+
 
 
     public PagoService(PagoRepository pagoRepository,WebClient webClient) {
@@ -64,6 +67,25 @@ public class PagoService {
             if (Boolean.FALSE.equals(existeCurso)) {
                 logger.warn("Curso con id={} no existe.", pago.getIdCurso());
                 throw new ResourceNotFoundException("Curso no existe");
+            }
+
+            logger.info("Validando existencia de estudiante con RUN={}", pago.getRunEstudiante());
+            Boolean existeEst = webClient.get()
+                    .uri(String.format(usuarioExistsUrl, pago.getRunEstudiante()))
+                    .headers(h -> { if (authHeader != null) h.set("Authorization", authHeader); })
+                    .retrieve()
+                    .bodyToMono(Boolean.class)
+                    .block();
+
+            logger.info("Respuesta de api-gateway: existeEstudiante={}", existeEst);
+
+            if (existeEst == null) {
+                logger.error("No se pudo validar el estudiante con RUN {}", pago.getRunEstudiante());
+                throw new BadRequestException("No se pudo validar el estudiante con RUN " + pago.getRunEstudiante());
+            }
+            if (Boolean.FALSE.equals(existeEst)) {
+                logger.warn("Estudiante con RUN={} no existe.", pago.getRunEstudiante());
+                throw new ResourceNotFoundException("El estudiante con RUN " + pago.getRunEstudiante() + " no existe");
             }
 
             Pago pagoGuardado = pagoRepository.save(pago);

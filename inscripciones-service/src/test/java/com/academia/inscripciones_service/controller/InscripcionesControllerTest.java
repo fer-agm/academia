@@ -153,17 +153,17 @@ class InscripcionesControllerTest {
     @DisplayName("inscribir devuelve 200 con la inscripcion creada y link self")
     void inscribir_ok() {
         // Given
-        when(inscripcionesService.crearInscripcion(inscripcion)).thenReturn(inscripcion);
+        when(inscripcionesService.crearInscripcion(inscripcion, "Bearer token")).thenReturn(inscripcion);
 
         // When
-        ResponseEntity<EntityModel<Inscripciones>> respuesta = inscripcionesController.inscribir(inscripcion);
+        ResponseEntity<EntityModel<Inscripciones>> respuesta = inscripcionesController.inscribir(inscripcion, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertNotNull(respuesta.getBody());
         assertSame(inscripcion, respuesta.getBody().getContent());
         assertTrue(respuesta.getBody().getLink("self").isPresent());
-        verify(inscripcionesService).crearInscripcion(inscripcion);
+        verify(inscripcionesService).crearInscripcion(inscripcion, "Bearer token");
     }
 
     @Test

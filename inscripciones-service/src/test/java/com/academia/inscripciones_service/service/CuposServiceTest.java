@@ -6,7 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,15 +28,31 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.academia.inscripciones_service.model.Cupos;
 import com.academia.inscripciones_service.repository.CuposRepository;
+
+import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
 class CuposServiceTest {
 
     @Mock
     private CuposRepository cuposRepository;
+
+    @Mock
+    private WebClient webClient;
+
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
 
     @InjectMocks
     private CuposService cuposService;
@@ -40,8 +61,21 @@ class CuposServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Given: a baseline Cupos used across tests
+        // Given: a baseline Cupos used across tests + injected gateway URL
+        ReflectionTestUtils.setField(cuposService, "cursoExistsUrl", "http://gateway/api/cursos/%d/existe");
         cupo = new Cupos(1L, 100L, 30, 10);
+    }
+
+    /** Stubs the blocking WebClient existence chain used by guardarCupo. */
+    @SuppressWarnings("unchecked")
+    private void stubCursoExiste(Boolean existe) {
+        Mono<Boolean> mono = mock(Mono.class);
+        lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersSpec).headers(any());
+        lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        lenient().doReturn(mono).when(responseSpec).bodyToMono(Boolean.class);
+        lenient().doReturn(existe).when(mono).block();
     }
 
     @Test
@@ -107,18 +141,32 @@ class CuposServiceTest {
     }
 
     @Test
-    @DisplayName("guardarCupo persiste y devuelve el cupo guardado")
+    @DisplayName("guardarCupo persiste y devuelve el cupo guardado cuando el curso existe")
     void guardarCupo_ok() {
         // Given
+        stubCursoExiste(true);
         when(cuposRepository.save(cupo)).thenReturn(cupo);
 
         // When
-        Cupos resultado = cuposService.guardarCupo(cupo);
+        Cupos resultado = cuposService.guardarCupo(cupo, "Bearer token");
 
         // Then
         assertNotNull(resultado);
         assertEquals(cupo.getId_cupo(), resultado.getId_cupo());
         verify(cuposRepository).save(cupo);
+    }
+
+    @Test
+    @DisplayName("guardarCupo lanza error y no persiste cuando el curso no existe")
+    void guardarCupo_cursoInexistente() {
+        // Given
+        stubCursoExiste(false);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> cuposService.guardarCupo(cupo, "Bearer token"));
+        assertEquals("El curso con id 100 no existe", ex.getMessage());
+        verify(cuposRepository, never()).save(any(Cupos.class));
     }
 
     @Test

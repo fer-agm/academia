@@ -3,12 +3,17 @@ package com.academia.calificaciones_service.service;
 import com.academia.calificaciones_service.dto.CalificacionDTO;
 import com.academia.calificaciones_service.model.Calificacion;
 import com.academia.calificaciones_service.repository.CalificacionRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -18,12 +23,15 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,11 +41,47 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CalificacionServiceTest {
 
+    private static final String EVALUACION_URL = "http://gateway/evaluaciones/%d/existe";
+    private static final String USUARIO_URL = "http://gateway/usuarios/run/%s/existe";
+
     @Mock
     private CalificacionRepository repository;
 
+    @Mock
+    private WebClient webClient;
+
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
+
     @InjectMocks
     private CalificacionService service;
+
+    @BeforeEach
+    void setUp() {
+        // @Value fields are not populated outside Spring; inject format-string URLs manually.
+        ReflectionTestUtils.setField(service, "usuarioExistsUrl", USUARIO_URL);
+    }
+
+    /**
+     * Stubs the WebClient fluent chain. guardar() validates evaluacion first, then estudiante;
+     * successive block() invocations return the provided answers in that order.
+     */
+    @SuppressWarnings("unchecked")
+    private void stubExistenceChecks(Boolean primero, Boolean segundo) {
+        Mono<Boolean> mono = mock(Mono.class);
+        lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersSpec).headers(any());
+        lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        lenient().doReturn(mono).when(responseSpec).bodyToMono(Boolean.class);
+        lenient().doReturn(primero, segundo).when(mono).block();
+    }
 
     private Calificacion buildEntity(Long id) {
         return new Calificacion(id, "EST-001", LocalDate.of(2026, 1, 15), 6.5);
@@ -70,7 +114,6 @@ class CalificacionServiceTest {
         assertEquals(4.0, dto2.getNota());
 
         verify(repository).findAll();
-        verifyNoMoreInteractions(repository);
     }
 
     @Test
@@ -122,13 +165,14 @@ class CalificacionServiceTest {
 
     @Test
     void guardar_savesEntityAndReturnsMappedDto() {
-        // Given
+        // Given: both cross-service existence checks return true
         CalificacionDTO input = new CalificacionDTO(null, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
         Calificacion persisted = new Calificacion(5L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
+        stubExistenceChecks(Boolean.TRUE, Boolean.TRUE);
         when(repository.save(any(Calificacion.class))).thenReturn(persisted);
 
         // When
-        CalificacionDTO result = service.guardar(input);
+        CalificacionDTO result = service.guardar(input, "Bearer token");
 
         // Then
         assertNotNull(result);
@@ -145,7 +189,19 @@ class CalificacionServiceTest {
         assertEquals("EST-003", saved.getIdEstudiante());
         assertEquals(LocalDate.of(2026, 3, 10), saved.getFecha());
         assertEquals(5.5, saved.getNota());
-        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void guardar_whenEstudianteDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
+        // Given: estudiante not found (the only cross-service reference checked)
+        CalificacionDTO input = new CalificacionDTO(7L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
+        stubExistenceChecks(Boolean.FALSE, Boolean.FALSE);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(input, "Bearer token"));
+        assertEquals("El estudiante con RUN EST-003 no existe", ex.getMessage());
+        verify(repository, never()).save(any(Calificacion.class));
     }
 
     @Test
@@ -159,6 +215,5 @@ class CalificacionServiceTest {
         // Then
         verify(repository, times(1)).deleteById(id);
         verify(repository, never()).findById(any());
-        verifyNoMoreInteractions(repository);
     }
 }

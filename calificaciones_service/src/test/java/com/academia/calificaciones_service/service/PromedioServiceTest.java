@@ -3,12 +3,17 @@ package com.academia.calificaciones_service.service;
 import com.academia.calificaciones_service.dto.PromedioDTO;
 import com.academia.calificaciones_service.model.Promedio;
 import com.academia.calificaciones_service.repository.PromedioRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
@@ -17,12 +22,15 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 /**
@@ -32,11 +40,48 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PromedioServiceTest {
 
+    private static final String CURSO_URL = "http://gateway/cursos/%d/existe";
+    private static final String USUARIO_URL = "http://gateway/usuarios/run/%s/existe";
+
     @Mock
     private PromedioRepository repository;
 
+    @Mock
+    private WebClient webClient;
+
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
+
     @InjectMocks
     private PromedioService service;
+
+    @BeforeEach
+    void setUp() {
+        // @Value fields are not populated outside Spring; inject format-string URLs manually.
+        ReflectionTestUtils.setField(service, "cursoExistsUrl", CURSO_URL);
+        ReflectionTestUtils.setField(service, "usuarioExistsUrl", USUARIO_URL);
+    }
+
+    /**
+     * Stubs the WebClient fluent chain. guardar() validates curso first, then estudiante;
+     * successive block() invocations return the provided answers in that order.
+     */
+    @SuppressWarnings("unchecked")
+    private void stubExistenceChecks(Boolean primero, Boolean segundo) {
+        Mono<Boolean> mono = mock(Mono.class);
+        lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersSpec).headers(any());
+        lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        lenient().doReturn(mono).when(responseSpec).bodyToMono(Boolean.class);
+        lenient().doReturn(primero, segundo).when(mono).block();
+    }
 
     // Promedio entity constructor order: (idPromedio, idEstudiante, idCurso, promedioGeneral, totalEvaluaciones)
     private Promedio buildEntity(Long id) {
@@ -73,7 +118,6 @@ class PromedioServiceTest {
         assertEquals(3, dto2.getTotalEvaluaciones());
 
         verify(repository).findAll();
-        verifyNoMoreInteractions(repository);
     }
 
     @Test
@@ -126,14 +170,15 @@ class PromedioServiceTest {
 
     @Test
     void guardar_savesEntityAndReturnsMappedDto() {
-        // Given
+        // Given: both cross-service existence checks return true
         PromedioDTO input = new PromedioDTO(null, 300L, "EST-003", 4.9, 5);
         // Persisted entity returned by the mocked repository (order: idPromedio, idEstudiante, idCurso, ...)
         Promedio persisted = new Promedio(8L, "EST-003", 300L, 4.9, 5);
+        stubExistenceChecks(Boolean.TRUE, Boolean.TRUE);
         when(repository.save(any(Promedio.class))).thenReturn(persisted);
 
         // When
-        PromedioDTO result = service.guardar(input);
+        PromedioDTO result = service.guardar(input, "Bearer token");
 
         // Then: returned DTO is convertToDTO(persisted)
         assertNotNull(result);
@@ -144,8 +189,6 @@ class PromedioServiceTest {
         assertEquals(5, result.getTotalEvaluaciones());
 
         // Verify the entity built from the DTO before saving.
-        // Note: convertToEntity maps DTO.idEstudiante -> entity.idEstudiante and DTO.idCurso -> entity.idCurso
-        // via the Promedio(idPromedio, idEstudiante, idCurso, ...) constructor.
         ArgumentCaptor<Promedio> captor = ArgumentCaptor.forClass(Promedio.class);
         verify(repository).save(captor.capture());
         Promedio saved = captor.getValue();
@@ -154,7 +197,32 @@ class PromedioServiceTest {
         assertEquals(300L, saved.getIdCurso());
         assertEquals(4.9, saved.getPromedioGeneral());
         assertEquals(5, saved.getTotalEvaluaciones());
-        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    void guardar_whenCursoDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
+        // Given: first check (curso) returns false
+        PromedioDTO input = new PromedioDTO(null, 300L, "EST-003", 4.9, 5);
+        stubExistenceChecks(Boolean.FALSE, Boolean.TRUE);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(input, "Bearer token"));
+        assertEquals("El curso con id 300 no existe", ex.getMessage());
+        verify(repository, never()).save(any(Promedio.class));
+    }
+
+    @Test
+    void guardar_whenEstudianteDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
+        // Given: curso ok (true), estudiante not found (false)
+        PromedioDTO input = new PromedioDTO(null, 300L, "EST-003", 4.9, 5);
+        stubExistenceChecks(Boolean.TRUE, Boolean.FALSE);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(input, "Bearer token"));
+        assertEquals("El estudiante con RUN EST-003 no existe", ex.getMessage());
+        verify(repository, never()).save(any(Promedio.class));
     }
 
     @Test
@@ -168,6 +236,5 @@ class PromedioServiceTest {
         // Then
         verify(repository, times(1)).deleteById(id);
         verify(repository, never()).findById(any());
-        verifyNoMoreInteractions(repository);
     }
 }

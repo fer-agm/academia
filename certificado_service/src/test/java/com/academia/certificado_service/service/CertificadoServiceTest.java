@@ -2,11 +2,16 @@ package com.academia.certificado_service.service;
 
 import com.academia.certificado_service.model.Certificado;
 import com.academia.certificado_service.repository.CertificadoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -17,9 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -28,15 +38,42 @@ import static org.mockito.Mockito.when;
 /**
  * Pure Mockito unit tests for {@link CertificadoService}.
  * No Spring context, no database, no @SpringBootTest.
+ *
+ * generarCertificado(...) now validates curso/estudiante existence via WebClient
+ * (api-gateway), so the WebClient fluent chain is mocked (mirroring PagoServiceTest).
  */
 @ExtendWith(MockitoExtension.class)
 class CertificadoServiceTest {
 
+    private static final String CURSO_URL = "http://gateway/cursos/%d/existe";
+    private static final String USUARIO_URL = "http://gateway/usuarios/run/%s/existe";
+    private static final String AUTH = "Bearer token";
+
     @Mock
     private CertificadoRepository repository;
 
+    @Mock
+    private WebClient webClient;
+
+    @Mock
+    private WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec<?> requestHeadersSpec;
+
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
+
     @InjectMocks
     private CertificadoService service;
+
+    @BeforeEach
+    void setUp() {
+        // The @Value(...) fields are not populated outside Spring, so we inject
+        // format-string URLs manually for String.format(...).
+        ReflectionTestUtils.setField(service, "cursoExistsUrl", CURSO_URL);
+        ReflectionTestUtils.setField(service, "usuarioExistsUrl", USUARIO_URL);
+    }
 
     // ---------- helpers ----------
 
@@ -49,6 +86,26 @@ class CertificadoServiceTest {
         c.setFechaEmision(fechaEmision);
         c.setCodigo(codigo);
         return c;
+    }
+
+    /**
+     * Stubs the WebClient fluent chain. generarCertificado() calls curso first then
+     * estudiante; successive block() invocations return the supplied answers in order.
+     */
+    @SuppressWarnings("unchecked")
+    private void stubExistencia(Boolean cursoAnswer, Boolean estudianteAnswer) {
+        Mono<Boolean> mono = mock(Mono.class);
+        lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersSpec).headers(any());
+        lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        lenient().doReturn(mono).when(responseSpec).bodyToMono(Boolean.class);
+        lenient().doReturn(cursoAnswer, estudianteAnswer).when(mono).block();
+    }
+
+    /** Both curso and estudiante exist. */
+    private void stubAmbosExisten() {
+        stubExistencia(Boolean.TRUE, Boolean.TRUE);
     }
 
     // ---------- listarTodos ----------
@@ -153,10 +210,11 @@ class CertificadoServiceTest {
     void generarCertificado_nuevo_asignaFechaYCodigo() {
         // Given
         Certificado nuevo = buildCertificado(null, "E1", 10L, null, null);
+        stubAmbosExisten();
         when(repository.save(any(Certificado.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
-        Certificado result = service.generarCertificado(nuevo);
+        Certificado result = service.generarCertificado(nuevo, AUTH);
 
         // Then
         assertNotNull(result);
@@ -174,10 +232,11 @@ class CertificadoServiceTest {
         // Given: aunque vengan datos, al ser nuevo (id null) se sobrescriben
         LocalDateTime fechaEntrante = LocalDateTime.of(2000, 1, 1, 0, 0);
         Certificado nuevo = buildCertificado(null, "E1", 10L, fechaEntrante, "VIEJO");
+        stubAmbosExisten();
         when(repository.save(any(Certificado.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
-        Certificado result = service.generarCertificado(nuevo);
+        Certificado result = service.generarCertificado(nuevo, AUTH);
 
         // Then
         assertFalse(fechaEntrante.equals(result.getFechaEmision()) && "VIEJO".equals(result.getCodigo()),
@@ -195,11 +254,12 @@ class CertificadoServiceTest {
         LocalDateTime fechaExistente = LocalDateTime.of(2025, 5, 1, 12, 0);
         Certificado existente = buildCertificado(7L, "E7", 70L, fechaExistente, "CODE0007");
         Certificado entrante = buildCertificado(7L, "E7", 70L, null, null);
+        stubAmbosExisten();
         when(repository.findById(7L)).thenReturn(Optional.of(existente));
         when(repository.save(any(Certificado.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
-        Certificado result = service.generarCertificado(entrante);
+        Certificado result = service.generarCertificado(entrante, AUTH);
 
         // Then
         assertEquals(fechaExistente, result.getFechaEmision(), "Debe conservar la fecha existente");
@@ -215,11 +275,12 @@ class CertificadoServiceTest {
         LocalDateTime fechaNueva = LocalDateTime.of(2026, 6, 27, 9, 30);
         Certificado existente = buildCertificado(8L, "E8", 80L, fechaExistente, "OLDCODE8");
         Certificado entrante = buildCertificado(8L, "E8", 80L, fechaNueva, "NEWCODE8");
+        stubAmbosExisten();
         when(repository.findById(8L)).thenReturn(Optional.of(existente));
         when(repository.save(any(Certificado.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
-        Certificado result = service.generarCertificado(entrante);
+        Certificado result = service.generarCertificado(entrante, AUTH);
 
         // Then
         assertEquals(fechaNueva, result.getFechaEmision(), "No debe sobrescribir la fecha entrante");
@@ -232,11 +293,12 @@ class CertificadoServiceTest {
     void generarCertificado_existente_noEncontrado_guardaTalCual() {
         // Given: id presente pero no existe en BD -> ifPresent no ejecuta nada
         Certificado entrante = buildCertificado(15L, "E15", 150L, null, null);
+        stubAmbosExisten();
         when(repository.findById(15L)).thenReturn(Optional.empty());
         when(repository.save(any(Certificado.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // When
-        Certificado result = service.generarCertificado(entrante);
+        Certificado result = service.generarCertificado(entrante, AUTH);
 
         // Then
         assertSame(entrante, result);
@@ -252,14 +314,82 @@ class CertificadoServiceTest {
         // Given
         Certificado entrante = buildCertificado(null, "E1", 10L, null, null);
         Certificado guardado = buildCertificado(100L, "E1", 10L, LocalDateTime.now(), "SAVED001");
+        stubAmbosExisten();
         when(repository.save(any(Certificado.class))).thenReturn(guardado);
 
         // When
-        Certificado result = service.generarCertificado(entrante);
+        Certificado result = service.generarCertificado(entrante, AUTH);
 
         // Then
         assertSame(guardado, result, "Debe devolver exactamente lo que retorna repository.save");
         verify(repository, times(1)).save(entrante);
+    }
+
+    // ---------- generarCertificado (validacion cross-service negativa) ----------
+
+    @Test
+    void generarCertificado_cursoNoExiste_lanzaIllegalArgumentYNoGuarda() {
+        // Given: curso no existe (false)
+        Certificado entrante = buildCertificado(null, "E1", 10L, null, null);
+        stubExistencia(Boolean.FALSE, Boolean.TRUE);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.generarCertificado(entrante, AUTH));
+        assertEquals("El curso con id 10 no existe", ex.getMessage());
+        verify(repository, never()).save(any(Certificado.class));
+    }
+
+    @Test
+    void generarCertificado_estudianteNoExiste_lanzaIllegalArgumentYNoGuarda() {
+        // Given: curso ok (true), estudiante no existe (false)
+        Certificado entrante = buildCertificado(null, "E1", 10L, null, null);
+        stubExistencia(Boolean.TRUE, Boolean.FALSE);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.generarCertificado(entrante, AUTH));
+        assertEquals("El estudiante con RUN E1 no existe", ex.getMessage());
+        verify(repository, never()).save(any(Certificado.class));
+    }
+
+    @Test
+    void generarCertificado_validacionCursoNull_lanzaIllegalStateYNoGuarda() {
+        // Given: la validacion del curso devuelve null
+        Certificado entrante = buildCertificado(null, "E1", 10L, null, null);
+        stubExistencia(null, Boolean.TRUE);
+
+        // When / Then
+        assertThrows(IllegalStateException.class,
+                () -> service.generarCertificado(entrante, AUTH));
+        verify(repository, never()).save(any(Certificado.class));
+    }
+
+    @Test
+    void generarCertificado_validacionEstudianteNull_lanzaIllegalStateYNoGuarda() {
+        // Given: curso ok, validacion del estudiante devuelve null
+        Certificado entrante = buildCertificado(null, "E1", 10L, null, null);
+        stubExistencia(Boolean.TRUE, null);
+
+        // When / Then
+        assertThrows(IllegalStateException.class,
+                () -> service.generarCertificado(entrante, AUTH));
+        verify(repository, never()).save(any(Certificado.class));
+    }
+
+    @Test
+    void generarCertificado_authHeaderNull_validaIgualYGuarda() {
+        // Given: authHeader null no debe romper la validacion
+        Certificado nuevo = buildCertificado(null, "E1", 10L, null, null);
+        stubAmbosExisten();
+        when(repository.save(any(Certificado.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // When
+        Certificado result = service.generarCertificado(nuevo, null);
+
+        // Then
+        assertNotNull(result);
+        verify(repository, times(1)).save(nuevo);
     }
 
     // ---------- borrar ----------

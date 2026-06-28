@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -30,6 +31,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.academia.user_service.model.User;
+import com.academia.user_service.repository.RolRepository;
 import com.academia.user_service.repository.UserRepository;
 
 /**
@@ -41,6 +43,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private RolRepository rolRepository;
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private WebClient webClient;
@@ -63,6 +68,7 @@ class UserServiceTest {
         user.setUsuario("aperez");
         user.setClave("secret");
         user.setEmail("aperez@banca.me");
+        user.setIdRol(1L);
         return user;
     }
 
@@ -83,6 +89,7 @@ class UserServiceTest {
         // Given
         User user = buildUser();
         user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
+        when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.save(user)).thenReturn(user);
         stubWebClientSuccess();
 
@@ -104,6 +111,7 @@ class UserServiceTest {
         // Given
         User user = buildUser();
         user.setFecha_Registro(null);
+        when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         stubWebClientSuccess();
 
@@ -122,6 +130,7 @@ class UserServiceTest {
         User user = buildUser();
         java.sql.Date original = new java.sql.Date(0L);
         user.setFecha_Registro(original);
+        when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
         stubWebClientSuccess();
 
@@ -139,6 +148,7 @@ class UserServiceTest {
         // Given
         User user = buildUser();
         user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
+        when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.save(user)).thenReturn(user);
         // crearCredencialAuth is best-effort (try/catch): a WebClient failure must not break creation.
         when(webClient.post()
@@ -156,6 +166,21 @@ class UserServiceTest {
         assertNotNull(result);
         assertSame(user, result);
         verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("guardarUsuario: throws when the idRol does not exist")
+    void guardarUsuario_throwsWhenRolDoesNotExist() {
+        // Given
+        User user = buildUser();
+        user.setIdRol(999L);
+        when(rolRepository.existsById(any())).thenReturn(false);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.guardarUsuario(user));
+        assertEquals("El rol con id 999 no existe", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -244,6 +269,8 @@ class UserServiceTest {
         nuevosDatos.setUsuario("bsoto");
         nuevosDatos.setClave("newpass");
         nuevosDatos.setEmail("bsoto@banca.me");
+        nuevosDatos.setIdRol(1L);
+        when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(userRepository.save(existing)).thenReturn(existing);
 
@@ -266,6 +293,7 @@ class UserServiceTest {
     void actualizarUsuario_notFound() {
         // Given
         User nuevosDatos = buildUser();
+        when(rolRepository.existsById(any())).thenReturn(true);
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         // When

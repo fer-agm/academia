@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -71,14 +73,28 @@ public class EvaluacionesController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Crear evaluación", description = "Registra una nueva evaluación")
+    @Operation(summary = "Verificar existencia de evaluación",
+            description = "Indica si existe una evaluación con el identificador indicado. "
+                    + "Endpoint pensado para validaciones entre microservicios.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Verificación realizada correctamente")
+    })
+    @GetMapping("/{id}/existe")
+    public ResponseEntity<Boolean> existe(
+            @Parameter(description = "Identificador de la evaluación a verificar") @PathVariable Long id) {
+        return ResponseEntity.ok(evaluacionesService.existe(id));
+    }
+
+    @Operation(summary = "Crear evaluación",
+            description = "Registra una nueva evaluación. Valida la existencia del curso asociado antes de persistir.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Evaluación creada correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos de la evaluación inválidos")
+            @ApiResponse(responseCode = "400", description = "Datos de la evaluación inválidos o curso no existente")
     })
     @PostMapping
-    public ResponseEntity<EntityModel<Evaluaciones>> crearEvaluacion(@Valid @RequestBody Evaluaciones evaluaciones) {
-        Evaluaciones saved = evaluacionesService.guardar(evaluaciones);
+    public ResponseEntity<EntityModel<Evaluaciones>> crearEvaluacion(@Valid @RequestBody Evaluaciones evaluaciones,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        Evaluaciones saved = evaluacionesService.guardar(evaluaciones, authHeader);
         return ResponseEntity.ok(EntityModel.of(saved,
                 linkTo(methodOn(EvaluacionesController.class).getEvaluacionById(saved.getIdEvaluacion())).withSelfRel()));
     }
@@ -92,11 +108,12 @@ public class EvaluacionesController {
     @PutMapping("/{id}")
     public ResponseEntity<EntityModel<Evaluaciones>> actualizar(
             @Parameter(description = "Identificador de la evaluación a actualizar") @PathVariable Long id,
-            @Valid @RequestBody Evaluaciones evaluaciones) {
+            @Valid @RequestBody Evaluaciones evaluaciones,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         return evaluacionesService.getEvaluacionById(id)
                 .map(existing -> {
                     evaluaciones.setIdEvaluacion(id);
-                    Evaluaciones saved = evaluacionesService.guardar(evaluaciones);
+                    Evaluaciones saved = evaluacionesService.guardar(evaluaciones, authHeader);
                     return ResponseEntity.ok(EntityModel.of(saved,
                             linkTo(methodOn(EvaluacionesController.class).getEvaluacionById(saved.getIdEvaluacion())).withSelfRel()));
                 })

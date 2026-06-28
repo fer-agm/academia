@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.academia.evaluaciones_service.model.Alternativas;
 import com.academia.evaluaciones_service.repository.AlternativasRepository;
+import com.academia.evaluaciones_service.repository.PreguntasRepository;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,9 +13,12 @@ import java.util.Optional;
 public class AlternativasService {
 
     private final AlternativasRepository alternativasRepository;
+    private final PreguntasRepository preguntasRepository;
 
-    public AlternativasService(AlternativasRepository alternativasRepository) {
+    public AlternativasService(AlternativasRepository alternativasRepository,
+            PreguntasRepository preguntasRepository) {
         this.alternativasRepository = alternativasRepository;
+        this.preguntasRepository = preguntasRepository;
     }
 
     public List<Alternativas> getAll() {
@@ -33,6 +37,11 @@ public class AlternativasService {
 
     public Alternativas guardar(Alternativas alternativas) {
         log.info("[AlternativasService] Guardando alternativa: {}", alternativas.getTexto());
+        if (alternativas.getIdPregunta() == null
+                || !preguntasRepository.existsById(alternativas.getIdPregunta())) {
+            throw new IllegalArgumentException(
+                    "La pregunta con id " + alternativas.getIdPregunta() + " no existe");
+        }
         Alternativas saved = alternativasRepository.save(alternativas);
         log.info("[AlternativasService] Alternativa guardada con ID: {}", saved.getIdAlternativa());
         return saved;

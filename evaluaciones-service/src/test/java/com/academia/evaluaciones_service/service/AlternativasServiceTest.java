@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,12 +26,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.academia.evaluaciones_service.model.Alternativas;
 import com.academia.evaluaciones_service.repository.AlternativasRepository;
+import com.academia.evaluaciones_service.repository.PreguntasRepository;
 
 @ExtendWith(MockitoExtension.class)
 class AlternativasServiceTest {
 
     @Mock
     private AlternativasRepository alternativasRepository;
+
+    @Mock
+    private PreguntasRepository preguntasRepository;
 
     @InjectMocks
     private AlternativasService alternativasService;
@@ -103,6 +109,7 @@ class AlternativasServiceTest {
         // Given
         Alternativas toSave = new Alternativas(null, "Nueva", true, 5L);
         Alternativas saved = new Alternativas(1L, "Nueva", true, 5L);
+        when(preguntasRepository.existsById(5L)).thenReturn(true);
         when(alternativasRepository.save(toSave)).thenReturn(saved);
 
         // When
@@ -119,6 +126,7 @@ class AlternativasServiceTest {
     void guardar_returnsSameInstanceFromRepository() {
         // Given
         Alternativas alternativa = buildAlternativa();
+        when(preguntasRepository.existsById(anyLong())).thenReturn(true);
         when(alternativasRepository.save(any(Alternativas.class))).thenReturn(alternativa);
 
         // When
@@ -127,6 +135,29 @@ class AlternativasServiceTest {
         // Then
         assertSame(alternativa, result);
         verify(alternativasRepository, times(1)).save(alternativa);
+    }
+
+    @Test
+    void guardar_preguntaNoExiste_lanzaIllegalArgumentYNoGuarda() {
+        // Given
+        Alternativas alternativa = new Alternativas(null, "Sin pregunta", true, 99L);
+        when(preguntasRepository.existsById(99L)).thenReturn(false);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> alternativasService.guardar(alternativa));
+        assertEquals("La pregunta con id 99 no existe", ex.getMessage());
+        verify(alternativasRepository, never()).save(any(Alternativas.class));
+    }
+
+    @Test
+    void guardar_idPreguntaNull_lanzaIllegalArgumentYNoGuarda() {
+        // Given
+        Alternativas alternativa = new Alternativas(null, "Sin pregunta", true, null);
+
+        // When / Then
+        assertThrows(IllegalArgumentException.class, () -> alternativasService.guardar(alternativa));
+        verify(alternativasRepository, never()).save(any(Alternativas.class));
     }
 
     @Test

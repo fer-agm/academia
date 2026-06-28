@@ -1,7 +1,9 @@
 package com.academia.inscripciones_service.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import com.academia.inscripciones_service.model.Cupos;
 import com.academia.inscripciones_service.repository.CuposRepository;
 import java.util.List;
@@ -11,9 +13,14 @@ import java.util.List;
 public class CuposService {
 
     private final CuposRepository cuposRepository;
+    private final WebClient webClient;
 
-    public CuposService(CuposRepository cuposRepository) {
+    @Value("${api.curso.exists}")
+    private String cursoExistsUrl;
+
+    public CuposService(CuposRepository cuposRepository, WebClient webClient) {
         this.cuposRepository = cuposRepository;
+        this.webClient = webClient;
     }
 
     public List<Cupos> listarTodos() {
@@ -30,11 +37,26 @@ public class CuposService {
         return cupo;
     }
 
-    public Cupos guardarCupo(Cupos cupo) {
+    public Cupos guardarCupo(Cupos cupo, String authHeader) {
         log.info("[CuposService] Guardando cupo para curso ID: {}", cupo.getIdCurso());
+        validarCurso(cupo.getIdCurso(), authHeader);
         Cupos saved = cuposRepository.save(cupo);
         log.info("[CuposService] Cupo guardado con ID: {}", saved.getId_cupo());
         return saved;
+    }
+
+    private void validarCurso(Long idCurso, String authHeader) {
+        log.info("[CuposService] Validando existencia del curso con id: {}", idCurso);
+        Boolean existe = webClient.get()
+                .uri(String.format(cursoExistsUrl, idCurso))
+                .headers(h -> { if (authHeader != null) h.set("Authorization", authHeader); })
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+        if (!Boolean.TRUE.equals(existe)) {
+            log.warn("[CuposService] El curso con id {} no existe", idCurso);
+            throw new IllegalArgumentException("El curso con id " + idCurso + " no existe");
+        }
     }
 
     public Cupos obtenerPorCurso(Long idCurso) {

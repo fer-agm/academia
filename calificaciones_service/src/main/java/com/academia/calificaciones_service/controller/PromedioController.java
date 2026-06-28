@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -71,9 +72,10 @@ public class PromedioController {
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
     @PostMapping
-    public ResponseEntity<PromedioDTO> crear(@Valid @RequestBody PromedioDTO promedioDTO) {
+    public ResponseEntity<PromedioDTO> crear(@Valid @RequestBody PromedioDTO promedioDTO,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         log.info("Petición entrante: Crear promedio");
-        return ResponseEntity.ok(promedioService.guardar(promedioDTO));
+        return ResponseEntity.ok(promedioService.guardar(promedioDTO, authHeader));
     }
 
     @Operation(summary = "Actualizar un promedio",
@@ -86,12 +88,13 @@ public class PromedioController {
     @PutMapping("/{id}")
     public ResponseEntity<PromedioDTO> actualizar(
             @Parameter(description = "Identificador único del promedio a actualizar", example = "1") @PathVariable Long id,
-            @Valid @RequestBody PromedioDTO promedioDTO) {
+            @Valid @RequestBody PromedioDTO promedioDTO,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         log.info("Petición entrante: Actualizar promedio ID {}", id);
         return promedioService.getById(id)
                 .map(existing -> {
                     promedioDTO.setIdPromedio(id);
-                    return ResponseEntity.ok(promedioService.guardar(promedioDTO));
+                    return ResponseEntity.ok(promedioService.guardar(promedioDTO, authHeader));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

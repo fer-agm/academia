@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.academia.pago_service.model.Transaccion;
 import com.academia.pago_service.repository.TransaccionRepository;
+import com.academia.pago_service.repository.PagoRepository;
+import com.academia.pago_service.exception.BadRequestException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,9 +14,11 @@ import java.util.List;
 public class TransaccionService {
 
     private final TransaccionRepository transaccionRepository;
+    private final PagoRepository pagoRepository;
 
-    public TransaccionService(TransaccionRepository transaccionRepository) {
+    public TransaccionService(TransaccionRepository transaccionRepository, PagoRepository pagoRepository) {
         this.transaccionRepository = transaccionRepository;
+        this.pagoRepository = pagoRepository;
     }
 
     public List<Transaccion> listarTodas() {
@@ -33,6 +37,11 @@ public class TransaccionService {
 
     public Transaccion registrarTransaccion(Transaccion t) {
         log.info("[TransaccionService] Registrando transacción con método: {}", t.getMetodo());
+        if (t.getPago() == null || t.getPago().getId_pago() == null
+                || !pagoRepository.existsById(t.getPago().getId_pago())) {
+            throw new BadRequestException("El pago con id "
+                    + (t.getPago() == null ? null : t.getPago().getId_pago()) + " no existe");
+        }
         if (t.getFecha() == null) {
             t.setFecha(LocalDateTime.now());
         }

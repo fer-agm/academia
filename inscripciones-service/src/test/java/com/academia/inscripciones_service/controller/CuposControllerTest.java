@@ -148,17 +148,17 @@ class CuposControllerTest {
     @DisplayName("crear devuelve 200 con el cupo guardado y link self")
     void crear_ok() {
         // Given
-        when(cuposService.guardarCupo(cupo)).thenReturn(cupo);
+        when(cuposService.guardarCupo(cupo, "Bearer token")).thenReturn(cupo);
 
         // When
-        ResponseEntity<EntityModel<Cupos>> respuesta = cuposController.crear(cupo);
+        ResponseEntity<EntityModel<Cupos>> respuesta = cuposController.crear(cupo, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, respuesta.getStatusCode());
         assertNotNull(respuesta.getBody());
         assertSame(cupo, respuesta.getBody().getContent());
         assertTrue(respuesta.getBody().getLink("self").isPresent());
-        verify(cuposService).guardarCupo(cupo);
+        verify(cuposService).guardarCupo(cupo, "Bearer token");
     }
 
     @Test

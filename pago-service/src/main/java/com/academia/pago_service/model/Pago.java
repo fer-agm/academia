@@ -1,5 +1,4 @@
 package com.academia.pago_service.model;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
@@ -23,10 +22,12 @@ import java.time.LocalDateTime;
 
 @Table(name = "pagos")
 public class Pago {
-    @Schema(description = "Identificador único del pago", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
+    // id_pago se autogenera al crear un pago (vía PagoDto, donde es READ_ONLY). En la entidad
+    // se deja escribible para poder referenciar un pago existente al registrar una transacción
+    // ({"pago":{"id_pago":10}}); así la validación de existencia puede leer el id enviado.
+    @Schema(description = "Identificador único del pago", example = "1")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id_pago;
 
     @Schema(description = "RUN del estudiante que realiza el pago", example = "12345678-9")

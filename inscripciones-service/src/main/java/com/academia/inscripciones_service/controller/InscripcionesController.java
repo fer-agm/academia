@@ -82,8 +82,10 @@ public class InscripcionesController {
         @ApiResponse(responseCode = "200", description = "Inscripción creada correctamente"),
         @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
-    public ResponseEntity<EntityModel<Inscripciones>> inscribir(@Valid @RequestBody Inscripciones inscripciones) {
-        Inscripciones creada = inscripcionesService.crearInscripcion(inscripciones);
+    public ResponseEntity<EntityModel<Inscripciones>> inscribir(
+            @Valid @RequestBody Inscripciones inscripciones,
+            @RequestHeader(value = org.springframework.http.HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        Inscripciones creada = inscripcionesService.crearInscripcion(inscripciones, authHeader);
         EntityModel<Inscripciones> model = EntityModel.of(creada,
                 linkTo(methodOn(InscripcionesController.class).obtenerPorId(creada.getId_inscripcion())).withSelfRel());
         return ResponseEntity.ok(model);

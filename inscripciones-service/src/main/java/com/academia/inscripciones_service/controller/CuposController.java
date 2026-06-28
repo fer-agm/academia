@@ -85,8 +85,10 @@ public class CuposController {
         @ApiResponse(responseCode = "200", description = "Cupo creado correctamente"),
         @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
-    public ResponseEntity<EntityModel<Cupos>> crear(@Valid @RequestBody Cupos cupo) {
-        Cupos guardado = cuposService.guardarCupo(cupo);
+    public ResponseEntity<EntityModel<Cupos>> crear(
+            @Valid @RequestBody Cupos cupo,
+            @RequestHeader(value = org.springframework.http.HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
+        Cupos guardado = cuposService.guardarCupo(cupo, authHeader);
         EntityModel<Cupos> model = EntityModel.of(guardado,
                 linkTo(methodOn(CuposController.class).obtenerPorId(guardado.getId_cupo())).withSelfRel());
         return ResponseEntity.ok(model);

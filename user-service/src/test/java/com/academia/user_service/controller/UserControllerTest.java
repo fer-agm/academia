@@ -68,6 +68,7 @@ class UserControllerTest {
         user.setUsuario("aperez");
         user.setClave("1234");
         user.setEmail("aperez@banca.me");
+        user.setIdRol(1L);
         return user;
     }
 

@@ -1,7 +1,9 @@
 package com.academia.evaluaciones_service.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import com.academia.evaluaciones_service.model.Evaluaciones;
 import com.academia.evaluaciones_service.repository.EvaluacionesRepository;
 import java.util.List;
@@ -12,9 +14,14 @@ import java.util.Optional;
 public class EvaluacionesService {
 
     private final EvaluacionesRepository evaluacionesRepository;
+    private final WebClient webClient;
 
-    public EvaluacionesService(EvaluacionesRepository evaluacionesRepository) {
+    @Value("${api.curso.exists}")
+    private String cursoExistsUrl;
+
+    public EvaluacionesService(EvaluacionesRepository evaluacionesRepository, WebClient webClient) {
         this.evaluacionesRepository = evaluacionesRepository;
+        this.webClient = webClient;
     }
 
     public List<Evaluaciones> getAllEvaluaciones() {
@@ -31,9 +38,28 @@ public class EvaluacionesService {
         return eval;
     }
 
-    public Evaluaciones guardar(Evaluaciones evaluaciones) {
-        log.info("[EvaluacionesService] Guardando evaluación para curso ID: {}", evaluaciones.getIdCurso());
-        Evaluaciones saved = evaluacionesRepository.save(evaluaciones);
+    public boolean existe(Long id) {
+        return evaluacionesRepository.existsById(id);
+    }
+
+    public Evaluaciones guardar(Evaluaciones eval, String authHeader) {
+        log.info("[EvaluacionesService] Guardando evaluación para curso ID: {}", eval.getIdCurso());
+
+        Boolean existe = webClient.get()
+                .uri(String.format(cursoExistsUrl, eval.getIdCurso()))
+                .headers(h -> { if (authHeader != null) h.set("Authorization", authHeader); })
+                .retrieve()
+                .bodyToMono(Boolean.class)
+                .block();
+
+        if (existe == null) {
+            throw new IllegalStateException("No se pudo validar el curso con id " + eval.getIdCurso());
+        }
+        if (Boolean.FALSE.equals(existe)) {
+            throw new IllegalArgumentException("El curso con id " + eval.getIdCurso() + " no existe");
+        }
+
+        Evaluaciones saved = evaluacionesRepository.save(eval);
         log.info("[EvaluacionesService] Evaluación guardada con ID: {}", saved.getIdEvaluacion());
         return saved;
     }

@@ -64,11 +64,14 @@ class PagoServiceTest {
     @InjectMocks
     private PagoService pagoService;
 
+    private static final String USUARIO_URL = "http://gateway/usuarios/run/%s/existe";
+
     @BeforeEach
     void setUp() {
-        // The @Value("${api.curso.exists}") field is not populated outside Spring,
-        // so we inject a format-string URL manually for String.format(cursoPath, idCurso).
+        // The @Value(...) fields are not populated outside Spring, so we inject
+        // format-string URLs manually for String.format(...).
         ReflectionTestUtils.setField(pagoService, "cursoPath", CURSO_URL);
+        ReflectionTestUtils.setField(pagoService, "usuarioExistsUrl", USUARIO_URL);
     }
 
     /** Builds a valid Pago with neto/descuento configured by the caller. */
@@ -100,6 +103,24 @@ class PagoServiceTest {
         lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
         lenient().doReturn(mono).when(responseSpec).bodyToMono(Boolean.class);
         lenient().doReturn(answer).when(mono).block();
+    }
+
+    /**
+     * Stubs the WebClient chain returning distinct answers for the curso call vs.
+     * the estudiante call, selected by the formatted URI. guardar() makes the curso
+     * call first (URL contains "/cursos/") then the estudiante call ("/usuarios/").
+     */
+    @SuppressWarnings("unchecked")
+    private void stubCursoYEstudiante(Boolean cursoAnswer, Boolean estudianteAnswer) {
+        Mono<Boolean> mono = mock(Mono.class);
+        lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
+        lenient().doReturn(requestHeadersSpec).when(requestHeadersSpec).headers(any());
+        lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
+        lenient().doReturn(mono).when(responseSpec).bodyToMono(Boolean.class);
+        // guardar() calls curso first, then estudiante: return the answers in that order
+        // on successive block() invocations.
+        lenient().doReturn(cursoAnswer, estudianteAnswer).when(mono).block();
     }
 
     // ---------------------------------------------------------------------
@@ -177,6 +198,20 @@ class PagoServiceTest {
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
                 () -> pagoService.guardar(pago, "Bearer token"));
         assertEquals("Curso no existe", ex.getMessage());
+        verify(pagoRepository, never()).save(any(Pago.class));
+    }
+
+    @Test
+    @DisplayName("guardar: curso existe pero estudiante NO existe -> lanza ResourceNotFoundException y no guarda")
+    void guardar_estudianteNoExiste_lanzaResourceNotFound() {
+        // Given: curso ok (true), estudiante no existe (false)
+        Pago pago = nuevoPago(100000, 0);
+        stubCursoYEstudiante(Boolean.TRUE, Boolean.FALSE);
+
+        // When / Then
+        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+                () -> pagoService.guardar(pago, "Bearer token"));
+        assertEquals("El estudiante con RUN " + pago.getRunEstudiante() + " no existe", ex.getMessage());
         verify(pagoRepository, never()).save(any(Pago.class));
     }
 

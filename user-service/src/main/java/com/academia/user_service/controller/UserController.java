@@ -62,6 +62,16 @@ public class UserController {
         return ResponseEntity.ok(model);
     }
 
+    @Operation(summary = "Verificar existencia de usuario por RUN", description = "Indica si existe un usuario registrado con el RUN indicado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Resultado de la verificación (true/false)")
+    })
+    @GetMapping("/usuarios/run/{run}/existe")
+    public ResponseEntity<Boolean> existePorRun(
+            @Parameter(description = "RUN del usuario a verificar") @PathVariable String run) {
+        return ResponseEntity.ok(userService.existePorRun(run));
+    }
+
     @Operation(summary = "Crear usuario", description = "Crea un nuevo usuario y provisiona su credencial de acceso")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Usuario creado correctamente"),

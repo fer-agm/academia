@@ -3,6 +3,7 @@ package com.academia.clases_service.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -25,12 +26,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.academia.clases_service.model.Curso;
 import com.academia.clases_service.repository.CursoRepository;
+import com.academia.clases_service.repository.CategoriaRepository;
 
 @ExtendWith(MockitoExtension.class)
 class CursoServiceTest {
 
     @Mock
     private CursoRepository cursoRepository;
+
+    @Mock
+    private CategoriaRepository categoriaRepository;
 
     @InjectMocks
     private CursoService cursoService;
@@ -137,6 +142,7 @@ class CursoServiceTest {
         // Given
         Curso toSave = new Curso(null, "Python", 50, "Curso de Python", 24990.0, 5L, 25);
         Curso saved = new Curso(9L, "Python", 50, "Curso de Python", 24990.0, 5L, 25);
+        when(categoriaRepository.existsById(5L)).thenReturn(true);
         when(cursoRepository.save(toSave)).thenReturn(saved);
 
         // When
@@ -146,6 +152,17 @@ class CursoServiceTest {
         assertEquals(9L, result.getIdCurso());
         assertEquals("Python", result.getNombreCurso());
         verify(cursoRepository).save(toSave);
+    }
+
+    @Test
+    void guardar_throwsWhenCategoriaDoesNotExist() {
+        // Given
+        Curso toSave = new Curso(null, "Python", 50, "Curso de Python", 24990.0, 999L, 25);
+        when(categoriaRepository.existsById(999L)).thenReturn(false);
+
+        // When / Then
+        assertThrows(IllegalArgumentException.class, () -> cursoService.guardar(toSave));
+        verify(cursoRepository, never()).save(any(Curso.class));
     }
 
     @Test

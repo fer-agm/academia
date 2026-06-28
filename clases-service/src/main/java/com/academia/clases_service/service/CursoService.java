@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.academia.clases_service.model.Curso;
 import com.academia.clases_service.repository.CursoRepository;
+import com.academia.clases_service.repository.CategoriaRepository;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,9 +13,11 @@ import java.util.Optional;
 public class CursoService {
 
     private final CursoRepository cursoRepository;
+    private final CategoriaRepository categoriaRepository;
 
-    public CursoService(CursoRepository cursoRepository) {
+    public CursoService(CursoRepository cursoRepository, CategoriaRepository categoriaRepository) {
         this.cursoRepository = cursoRepository;
+        this.categoriaRepository = categoriaRepository;
     }
 
     public List<Curso> getAll() {
@@ -38,6 +41,9 @@ public class CursoService {
 
     public Curso guardar(Curso curso) {
         log.info("[CursoService] Guardando curso: {}", curso.getNombreCurso());
+        if (curso.getIdCategoria() == null || !categoriaRepository.existsById(curso.getIdCategoria())) {
+            throw new IllegalArgumentException("La categoría con id " + curso.getIdCategoria() + " no existe");
+        }
         Curso saved = cursoRepository.save(curso);
         log.info("[CursoService] Curso guardado con ID: {}", saved.getIdCurso());
         return saved;

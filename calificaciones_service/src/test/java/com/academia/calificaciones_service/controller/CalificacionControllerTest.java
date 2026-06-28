@@ -134,16 +134,16 @@ class CalificacionControllerTest {
         // Given
         CalificacionDTO input = new CalificacionDTO(null, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
         CalificacionDTO saved = buildDto(5L);
-        when(calificacionService.guardar(input)).thenReturn(saved);
+        when(calificacionService.guardar(input, "Bearer token")).thenReturn(saved);
 
         // When
-        ResponseEntity<CalificacionDTO> response = controller.crear(input);
+        ResponseEntity<CalificacionDTO> response = controller.crear(input, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(5L, response.getBody().getIdEvaluacion());
-        verify(calificacionService).guardar(input);
+        verify(calificacionService).guardar(input, "Bearer token");
         verifyNoMoreInteractions(calificacionService);
     }
 
@@ -154,10 +154,10 @@ class CalificacionControllerTest {
         CalificacionDTO input = new CalificacionDTO(null, "EST-009", LocalDate.of(2026, 4, 1), 7.0);
         CalificacionDTO saved = buildDto(id);
         when(calificacionService.getById(id)).thenReturn(Optional.of(buildDto(id)));
-        when(calificacionService.guardar(any(CalificacionDTO.class))).thenReturn(saved);
+        when(calificacionService.guardar(any(CalificacionDTO.class), any())).thenReturn(saved);
 
         // When
-        ResponseEntity<CalificacionDTO> response = controller.actualizar(id, input);
+        ResponseEntity<CalificacionDTO> response = controller.actualizar(id, input, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -166,7 +166,7 @@ class CalificacionControllerTest {
         // controller forces the path id onto the incoming dto before saving
         assertEquals(id, input.getIdEvaluacion());
         verify(calificacionService).getById(id);
-        verify(calificacionService).guardar(input);
+        verify(calificacionService).guardar(input, "Bearer token");
     }
 
     @Test
@@ -177,13 +177,13 @@ class CalificacionControllerTest {
         when(calificacionService.getById(id)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<CalificacionDTO> response = controller.actualizar(id, input);
+        ResponseEntity<CalificacionDTO> response = controller.actualizar(id, input, "Bearer token");
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNull(response.getBody());
         verify(calificacionService).getById(id);
-        verify(calificacionService, never()).guardar(any());
+        verify(calificacionService, never()).guardar(any(), any());
     }
 
     @Test
