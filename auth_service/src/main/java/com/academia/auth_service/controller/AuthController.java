@@ -26,7 +26,7 @@ public class AuthController {
     @Autowired
     private UsuarioService usuarioService;
 
-    @Operation(summary = "Iniciar sesión", description = "Valida run + clave y devuelve un token JWT válido por 1 hora.")
+    @Operation(summary = "Iniciar sesión", description = "Valida run + clave y devuelve un token JWT válido por 8 horas.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Petición procesada. status=ok con token JWT si las credenciales son válidas; status=error y token vacío si no lo son"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos (run o clave en blanco)")

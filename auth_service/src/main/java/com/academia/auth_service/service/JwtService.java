@@ -26,7 +26,7 @@ public class JwtService {
 
     public String generateToken (String run) {
         Date ahora = new Date();
-        Date expiration = new Date(ahora.getTime() + 1000*60*60);
+        Date expiration = new Date(ahora.getTime() + 1000L*60*60*8); // 8 horas
         return Jwts.builder()
         .setSubject(run)
         .setIssuedAt(ahora)
