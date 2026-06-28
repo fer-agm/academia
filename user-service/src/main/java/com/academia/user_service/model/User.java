@@ -2,7 +2,6 @@ package com.academia.user_service.model;
 
 import java.sql.Date;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,8 +25,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Schema(description = "Identificador único del usuario (generado automáticamente)", example = "1")
+    @Schema(description = "Identificador único del usuario (generado automáticamente)", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
     @Column(unique = true, nullable = false)

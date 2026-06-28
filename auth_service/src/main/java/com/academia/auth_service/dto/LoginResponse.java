@@ -17,4 +17,7 @@ public class LoginResponse {
     @Schema(description = "Token JWT (válido 1 hora); vacío si el login falló",
             example = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMTExMTExMS0xIn0...")
     private String token;
+
+    @Schema(description = "Mensaje legible del resultado del login", example = "Inicio de sesión exitoso")
+    private String mensaje;
 }

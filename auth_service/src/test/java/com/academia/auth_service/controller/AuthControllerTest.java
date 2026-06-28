@@ -50,17 +50,19 @@ class AuthControllerTest {
         assertNotNull(response);
         assertEquals("ok", response.getStatus());
         assertEquals("jwt-token", response.getToken());
+        assertEquals("Inicio de sesión exitoso", response.getMensaje());
         verify(usuarioService).login(run, clave);
         verifyNoMoreInteractions(usuarioService);
     }
 
     @Test
-    void login_nullToken_returnsErrorStatusWithEmptyToken() {
+    void login_userNotFound_returnsErrorUsuarioNoEncontrado() {
         // Given
         String run = "00000000-0";
         String clave = "wrong";
         AuthRequest request = buildRequest(run, clave);
         when(usuarioService.login(run, clave)).thenReturn(null);
+        when(usuarioService.existeUsuario(run)).thenReturn(false);
 
         // When
         LoginResponse response = authController.login(request);
@@ -69,7 +71,31 @@ class AuthControllerTest {
         assertNotNull(response);
         assertEquals("error", response.getStatus());
         assertEquals("", response.getToken());
+        assertEquals("Usuario no encontrado", response.getMensaje());
         verify(usuarioService).login(run, clave);
+        verify(usuarioService).existeUsuario(run);
+        verifyNoMoreInteractions(usuarioService);
+    }
+
+    @Test
+    void login_wrongClave_returnsErrorClaveIncorrecta() {
+        // Given
+        String run = "10492048-9";
+        String clave = "malaclave";
+        AuthRequest request = buildRequest(run, clave);
+        when(usuarioService.login(run, clave)).thenReturn(null);
+        when(usuarioService.existeUsuario(run)).thenReturn(true);
+
+        // When
+        LoginResponse response = authController.login(request);
+
+        // Then
+        assertNotNull(response);
+        assertEquals("error", response.getStatus());
+        assertEquals("", response.getToken());
+        assertEquals("Clave incorrecta", response.getMensaje());
+        verify(usuarioService).login(run, clave);
+        verify(usuarioService).existeUsuario(run);
         verifyNoMoreInteractions(usuarioService);
     }
 

@@ -34,10 +34,13 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody AuthRequest request) {
         String token = usuarioService.login(request.getRun(), request.getClave());
-        if (token == null) {
-            return new LoginResponse("error", "");
+        if (token != null) {
+            return new LoginResponse("ok", token, "Inicio de sesión exitoso");
         }
-        return new LoginResponse("ok", token);
+        if (!usuarioService.existeUsuario(request.getRun())) {
+            return new LoginResponse("error", "", "Usuario no encontrado");
+        }
+        return new LoginResponse("error", "", "Clave incorrecta");
     }
 
     @Operation(summary = "Registrar usuario", description = "Crea un usuario con run + clave.")

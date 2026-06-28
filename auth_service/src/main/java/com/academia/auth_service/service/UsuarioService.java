@@ -32,6 +32,11 @@ public class UsuarioService {
         return jwtService.generateToken(run);
     }
 
+    /** True si existe un usuario con ese run (para distinguir 'clave incorrecta' de 'usuario no encontrado'). */
+    public boolean existeUsuario(String run) {
+        return usuarioRepository.findByRun(run).isPresent();
+    }
+
     public String register(String run, String clave) {
         Optional<Usuario> existingOpt = usuarioRepository.findByRun(run);
         if (existingOpt.isPresent()) {

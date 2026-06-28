@@ -32,6 +32,7 @@ public class UserService {
 
     public User guardarUsuario(User user) {
         log.info("[UserService] Creando usuario con RUN: {}", user.getRun());
+        user.setId(null); // el id lo genera la BD (autoincremental); se ignora el que envíe el cliente
         if (user.getFecha_Registro() == null) {
             user.setFecha_Registro(new java.sql.Date(System.currentTimeMillis()));
         }

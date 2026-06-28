@@ -1,8 +1,10 @@
 package com.academia.auth_service.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -166,5 +168,35 @@ class UsuarioServiceTest {
         // Then
         verify(usuarioRepository, times(1)).findByRun(run);
         verify(usuarioRepository, times(1)).save(any(Usuario.class));
+    }
+
+    // ---------- existeUsuario ----------
+
+    @Test
+    void existeUsuario_whenPresent_returnsTrue() {
+        // Given
+        String run = "11111111-1";
+        when(usuarioRepository.findByRun(run)).thenReturn(Optional.of(new Usuario()));
+
+        // When
+        boolean result = usuarioService.existeUsuario(run);
+
+        // Then
+        assertTrue(result);
+        verify(usuarioRepository).findByRun(run);
+    }
+
+    @Test
+    void existeUsuario_whenAbsent_returnsFalse() {
+        // Given
+        String run = "00000000-0";
+        when(usuarioRepository.findByRun(run)).thenReturn(Optional.empty());
+
+        // When
+        boolean result = usuarioService.existeUsuario(run);
+
+        // Then
+        assertFalse(result);
+        verify(usuarioRepository).findByRun(run);
     }
 }
