@@ -69,6 +69,12 @@ public class UserService {
             throw new IllegalArgumentException("El rol con id " + nuevosDatos.getIdRol() + " no existe");
         }
         return userRepository.findById(id).map(user -> {
+            // El email debe seguir siendo único: si cambió y ya lo usa OTRO usuario, se rechaza.
+            if (nuevosDatos.getEmail() != null
+                    && !nuevosDatos.getEmail().equals(user.getEmail())
+                    && userRepository.findByEmail(nuevosDatos.getEmail()).isPresent()) {
+                throw new IllegalArgumentException("Ya existe un usuario con el email " + nuevosDatos.getEmail());
+            }
             user.setNombre(nuevosDatos.getNombre());
             user.setApellido(nuevosDatos.getApellido());
             user.setUsuario(nuevosDatos.getUsuario());

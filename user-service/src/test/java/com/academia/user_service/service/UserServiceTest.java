@@ -261,6 +261,29 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("actualizarUsuario: throws when the new email belongs to another user")
+    void actualizarUsuario_throwsWhenEmailExists() {
+        // Given: the user exists (email aperez@banca.me) and we try to change it to one already taken
+        User existing = buildUser();
+        User nuevosDatos = new User();
+        nuevosDatos.setNombre("Beatriz");
+        nuevosDatos.setApellido("Soto");
+        nuevosDatos.setUsuario("bsoto");
+        nuevosDatos.setClave("newpass");
+        nuevosDatos.setEmail("otro@banca.me");
+        nuevosDatos.setIdRol(1L);
+        when(rolRepository.existsById(any())).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.findByEmail("otro@banca.me")).thenReturn(Optional.of(buildUser()));
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.actualizarUsuario(1L, nuevosDatos));
+        assertEquals("Ya existe un usuario con el email otro@banca.me", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("actualizarUsuario: returns null and does not save when the user does not exist")
     void actualizarUsuario_notFound() {
         // Given
