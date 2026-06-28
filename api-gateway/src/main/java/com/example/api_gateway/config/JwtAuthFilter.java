@@ -27,14 +27,12 @@ public class JwtAuthFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
 
-        // Rutas públicas — dejar pasar sin token
-        if (path.startsWith("/api/auth/")||
-            path.startsWith("/swagger-ui") || 
-            path.contains("/v3/api-docs") || 
-            path.startsWith("/webjars/") ||
-            path.startsWith("/api/auth/registrar")
-        
-        
+        // Rutas públicas — dejar pasar sin token (login y registro/creación de usuario)
+        if (path.startsWith("/api/auth/") ||
+            path.equals("/api/usuarios/crear") ||
+            path.startsWith("/swagger-ui") ||
+            path.contains("/v3/api-docs") ||
+            path.startsWith("/webjars/")
         ) {
             return chain.filter(exchange);
         }

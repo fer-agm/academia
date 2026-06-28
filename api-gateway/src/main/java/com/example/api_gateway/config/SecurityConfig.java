@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .pathMatchers("/swagger-ui/**").permitAll()
                 .pathMatchers("/v3/api-docs/**").permitAll()
                 .pathMatchers("/webjars/**").permitAll()
+                .pathMatchers(org.springframework.http.HttpMethod.POST, "/api/usuarios/crear").permitAll()
                 .anyExchange().authenticated()
             )
             .addFilterAt(jwtFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
