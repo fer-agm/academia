@@ -89,7 +89,6 @@ public class UserService {
             user.setUsuario(nuevosDatos.getUsuario());
             user.setClave(nuevosDatos.getClave());
             user.setEmail(nuevosDatos.getEmail());
-            user.setFecha_Nacimiento(nuevosDatos.getFecha_Nacimiento());
             User updated = userRepository.save(user);
             log.info("[UserService] Usuario con ID {} actualizado", id);
             return updated;

@@ -1,4 +1,5 @@
 package com.academia.clases_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.academia.clases_service.model.Curso;
 import jakarta.validation.constraints.Min;
@@ -16,6 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CursoDTO {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idCurso;
 
     @NotBlank(message = "El nombre del curso no puede estar vacío")

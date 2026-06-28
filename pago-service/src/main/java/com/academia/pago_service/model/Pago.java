@@ -1,4 +1,5 @@
 package com.academia.pago_service.model;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 public class Pago {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id_pago;
 
     private String runEstudiante; 

@@ -1,4 +1,5 @@
 package com.academia.calificaciones_service.model;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 public class Calificacion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Column(name = "id_evaluacion")
     private Long idEvaluacion;
 

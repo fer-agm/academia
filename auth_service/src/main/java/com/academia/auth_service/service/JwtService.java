@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 
 @Service
@@ -30,7 +31,7 @@ public class JwtService {
         .setSubject(run)
         .setIssuedAt(ahora)
         .setExpiration(expiration)
-        .signWith(getKey())
+        .signWith(getKey(), SignatureAlgorithm.HS256)
         .compact();
     }
 

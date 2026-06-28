@@ -1,5 +1,6 @@
 package com.academia.user_service.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -12,7 +13,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
-    private String id;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private Long id;
 
     @NotBlank(message = "El RUN no puede estar vacío")
     @Pattern(regexp = "\\d{7,8}-[\\dkK]", message = "El RUN debe tener formato válido (ej: 12345678-9)")

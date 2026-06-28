@@ -1,4 +1,5 @@
 package com.academia.calificaciones_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.springframework.hateoas.RepresentationModel;
 import jakarta.validation.constraints.*;
@@ -9,6 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PromedioDTO extends RepresentationModel<PromedioDTO> {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idPromedio;
 
     @NotNull(message = "El ID del curso es obligatorio")

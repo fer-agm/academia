@@ -1,4 +1,5 @@
 package com.academia.clases_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.academia.clases_service.model.Categoria;
 
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CategoriaDTO {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idCategoria;
 
     @NotBlank(message = "El nombre de la categoría no puede estar vacío")

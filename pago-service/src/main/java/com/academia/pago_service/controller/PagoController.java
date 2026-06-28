@@ -1,27 +1,27 @@
 package com.academia.pago_service.controller;
 
 import java.util.List;
-import org.springframework.http.ResponseEntity;
-import com.academia.pago_service.model.Pago;
-import com.academia.pago_service.service.PagoService;
-
-
-
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.academia.pago_service.dto.PagoDto;
+import com.academia.pago_service.model.Pago;
+import com.academia.pago_service.service.PagoService;
+
+import jakarta.validation.Valid;
 
 
 
@@ -37,11 +37,12 @@ public class PagoController {
     }
 
     @PostMapping
-    public ResponseEntity<PagoDto> crearPago(@Valid @RequestBody PagoDto pagoDto) {
+    public ResponseEntity<PagoDto> crearPago(@Valid @RequestBody PagoDto pagoDto,
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         try {
-            logger.info("POST /pagos - Creando pago: idPago={}, totalPagar={}", 
+            logger.info("POST /pagos - Creando pago: idPago={}, totalPagar={}",
                 pagoDto.getId_pago(), pagoDto.getTotalPagar());
-            Pago nuevoPago = pagoService.guardar(pagoDto.toModel());
+            Pago nuevoPago = pagoService.guardar(pagoDto.toModel(), authHeader);
             logger.info("Pago creado exitosamente id={}", nuevoPago.getId_pago());
             return ResponseEntity.ok(PagoDto.fromModel(nuevoPago));
         } catch (Exception e) {
@@ -51,7 +52,7 @@ public class PagoController {
     }
 
 
-    @GetMapping
+    @GetMapping("/listar")
     public ResponseEntity<List<PagoDto>> listarPagos() {
         logger.info("GET /pagos - Listando pagos");
         List<Pago> pagos = pagoService.listar();

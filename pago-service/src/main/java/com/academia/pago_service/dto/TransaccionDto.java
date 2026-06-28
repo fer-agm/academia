@@ -1,4 +1,5 @@
 package com.academia.pago_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TransaccionDto {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idTransaccion;
 
     @NotBlank(message = "El método de pago es obligatorio")

@@ -1,4 +1,5 @@
 package com.academia.certificado_service.model;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,6 +14,7 @@ public class Certificado {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idCertificado;
 
     @Column(nullable = false)

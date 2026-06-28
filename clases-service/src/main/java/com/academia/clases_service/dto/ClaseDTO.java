@@ -1,4 +1,5 @@
 package com.academia.clases_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.springframework.hateoas.RepresentationModel;
 
@@ -20,6 +21,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 
 public class ClaseDTO extends RepresentationModel<ClaseDTO> {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idClase;
 
     @NotBlank(message = "El nombre de la clase no puede estar vacío")

@@ -1,4 +1,5 @@
 package com.academia.inscripciones_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InscripcionesDto {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idInscripcion;
 
     @NotBlank(message = "El RUN del estudiante es obligatorio")

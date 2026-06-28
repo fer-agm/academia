@@ -1,4 +1,5 @@
 package com.academia.inscripciones_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CuposDto {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idCupo;
 
     @NotNull(message = "El curso es obligatorio")

@@ -1,4 +1,5 @@
 package com.academia.evaluaciones_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.academia.evaluaciones_service.model.Preguntas;
 import jakarta.validation.constraints.Min;
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PreguntasDTO {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id_pregunta;
 
     @NotBlank(message = "El enunciado no puede estar vacío")

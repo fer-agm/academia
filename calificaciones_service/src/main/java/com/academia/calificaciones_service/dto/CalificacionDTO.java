@@ -1,4 +1,5 @@
 package com.academia.calificaciones_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.springframework.hateoas.RepresentationModel;
 import jakarta.validation.constraints.*;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CalificacionDTO extends RepresentationModel<CalificacionDTO> {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long idEvaluacion;
 
     @NotBlank(message = "El ID del estudiante es obligatorio")

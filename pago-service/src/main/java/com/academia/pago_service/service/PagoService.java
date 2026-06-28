@@ -32,7 +32,7 @@ public class PagoService {
         this.webClient = webClient;
     }
 
-    public Pago guardar(Pago pago){
+    public Pago guardar(Pago pago, String authHeader){
         logger.info("Iniciando guardar pago con id_pago={}, Neto={},Dcto={},medioPago={}",
             pago.getId_pago(), pago.getValorNeto(),pago.getDescuento(),pago.getMedioPago());
             pago.setIva(calcularIVA(calcularSubtotal(pago.getValorNeto(),pago.getDescuento())));
@@ -50,6 +50,7 @@ public class PagoService {
             logger.info("Realizando petición a api-gateway: {}", uri);
             Boolean existeCurso = webClient.get()
                     .uri(String.format(cursoPath, pago.getIdCurso()))
+                    .headers(h -> { if (authHeader != null) h.set("Authorization", authHeader); })
                     .retrieve()
                     .bodyToMono(Boolean.class)
                     .block();

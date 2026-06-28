@@ -1,4 +1,5 @@
 package com.academia.evaluaciones_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.academia.evaluaciones_service.model.Evaluaciones;
 import jakarta.validation.constraints.Max;
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class EvaluacionesDTO {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id_evaluacion;
 
     @NotNull(message = "El curso es obligatorio")

@@ -1,4 +1,5 @@
 package com.academia.auth_service.model;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 import jakarta.persistence.Column;
@@ -12,7 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "usuarios")
+@Table(name = "auth_usuarios")
 @Data
 @NoArgsConstructor  
 @AllArgsConstructor
@@ -20,6 +21,7 @@ import lombok.NoArgsConstructor;
 public class Usuario {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
 

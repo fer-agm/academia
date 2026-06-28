@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PagoDto {
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id_pago;
 
     @NotBlank(message = "El RUN del estudiante es obligatorio")

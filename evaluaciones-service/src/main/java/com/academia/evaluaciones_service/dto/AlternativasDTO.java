@@ -1,4 +1,5 @@
 package com.academia.evaluaciones_service.dto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.academia.evaluaciones_service.model.Alternativas;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class AlternativasDTO {
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id_alternativa;
 
     @NotBlank(message = "El texto no puede estar vacío")
