@@ -3,6 +3,7 @@ package com.academia.user_service.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -12,14 +13,21 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.academia.user_service.model.Rol;
 import com.academia.user_service.service.RolService;
@@ -27,7 +35,8 @@ import com.academia.user_service.service.RolService;
 /**
  * Pure Mockito unit tests for {@link RolController}.
  * No Spring context, no database, no MockMvc: the controller methods are
- * invoked directly and the resulting {@link ResponseEntity} is asserted.
+ * invoked directly and the resulting {@link ResponseEntity} (with HATEOAS
+ * hypermedia links) is asserted.
  */
 @ExtendWith(MockitoExtension.class)
 class RolControllerTest {
@@ -38,6 +47,18 @@ class RolControllerTest {
     @InjectMocks
     private RolController rolController;
 
+    @BeforeEach
+    void setUp() {
+        // WebMvcLinkBuilder needs a current request to build absolute links.
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(new MockHttpServletRequest()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
+    }
+
     private Rol buildRol() {
         Rol rol = new Rol();
         rol.setId_rol(1L);
@@ -46,33 +67,38 @@ class RolControllerTest {
     }
 
     @Test
-    @DisplayName("listar: returns all roles from the service")
+    @DisplayName("listar: returns all roles wrapped with hypermedia links")
     void listar_returnsAllRoles() {
         // Given
         List<Rol> roles = Arrays.asList(buildRol(), buildRol());
         when(rolService.listarTodos()).thenReturn(roles);
 
         // When
-        List<Rol> result = rolController.listar();
+        CollectionModel<EntityModel<Rol>> result = rolController.listar();
 
         // Then
-        assertEquals(2, result.size());
+        assertEquals(2, result.getContent().size());
+        assertTrue(result.hasLinks());
+        assertTrue(result.getLink("self").isPresent());
+        result.getContent().forEach(em -> assertTrue(em.hasLink("self")));
         verify(rolService, times(1)).listarTodos();
     }
 
     @Test
-    @DisplayName("obtenerPorId: returns 200 with the role when it exists")
+    @DisplayName("obtenerPorId: returns 200 with the role and links when it exists")
     void obtenerPorId_found() {
         // Given
         Rol rol = buildRol();
         when(rolService.buscarPorId(1L)).thenReturn(rol);
 
         // When
-        ResponseEntity<Rol> response = rolController.obtenerPorId(1L);
+        ResponseEntity<EntityModel<Rol>> response = rolController.obtenerPorId(1L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(rol, response.getBody());
+        assertSame(rol, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
+        assertTrue(response.getBody().hasLink("listar"));
         verify(rolService, times(1)).buscarPorId(1L);
     }
 
@@ -83,7 +109,7 @@ class RolControllerTest {
         when(rolService.buscarPorId(99L)).thenReturn(null);
 
         // When
-        ResponseEntity<Rol> response = rolController.obtenerPorId(99L);
+        ResponseEntity<EntityModel<Rol>> response = rolController.obtenerPorId(99L);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -92,7 +118,7 @@ class RolControllerTest {
     }
 
     @Test
-    @DisplayName("crear: returns 200 with the saved role")
+    @DisplayName("crear: returns 200 with the saved role and self link")
     void crear_savesRole() {
         // Given
         Rol toCreate = buildRol();
@@ -100,16 +126,17 @@ class RolControllerTest {
         when(rolService.guardarRol(toCreate)).thenReturn(saved);
 
         // When
-        ResponseEntity<Rol> response = rolController.crear(toCreate);
+        ResponseEntity<EntityModel<Rol>> response = rolController.crear(toCreate);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(saved, response.getBody());
+        assertSame(saved, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
         verify(rolService, times(1)).guardarRol(toCreate);
     }
 
     @Test
-    @DisplayName("actualizar: returns 200 with the updated role when it exists")
+    @DisplayName("actualizar: returns 200 with the updated role and self link when it exists")
     void actualizar_found() {
         // Given
         Rol details = buildRol();
@@ -117,11 +144,12 @@ class RolControllerTest {
         when(rolService.actualizarRol(eq(1L), any(Rol.class))).thenReturn(updated);
 
         // When
-        ResponseEntity<Rol> response = rolController.actualizar(1L, details);
+        ResponseEntity<EntityModel<Rol>> response = rolController.actualizar(1L, details);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(updated, response.getBody());
+        assertSame(updated, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
         verify(rolService, times(1)).actualizarRol(1L, details);
     }
 
@@ -133,7 +161,7 @@ class RolControllerTest {
         when(rolService.actualizarRol(eq(99L), any(Rol.class))).thenReturn(null);
 
         // When
-        ResponseEntity<Rol> response = rolController.actualizar(99L, details);
+        ResponseEntity<EntityModel<Rol>> response = rolController.actualizar(99L, details);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

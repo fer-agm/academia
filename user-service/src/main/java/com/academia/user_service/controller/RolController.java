@@ -1,7 +1,14 @@
 package com.academia.user_service.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,8 +35,13 @@ public class RolController {
             @ApiResponse(responseCode = "200", description = "Lista de roles obtenida correctamente")
     })
     @GetMapping("/listar")
-    public List<Rol> listar() {
-        return rolService.listarTodos();
+    public CollectionModel<EntityModel<Rol>> listar() {
+        List<EntityModel<Rol>> roles = rolService.listarTodos().stream()
+                .map(rol -> EntityModel.of(rol,
+                        linkTo(methodOn(RolController.class).obtenerPorId(rol.getId_rol())).withSelfRel()))
+                .collect(Collectors.toList());
+        return CollectionModel.of(roles,
+                linkTo(methodOn(RolController.class).listar()).withSelfRel());
     }
 
     @Operation(summary = "Obtener rol por ID", description = "Obtiene un rol a partir de su identificador")
@@ -38,10 +50,16 @@ public class RolController {
             @ApiResponse(responseCode = "404", description = "Rol no encontrado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Rol> obtenerPorId(
+    public ResponseEntity<EntityModel<Rol>> obtenerPorId(
             @Parameter(description = "Identificador del rol") @PathVariable Long id) {
         Rol rol = rolService.buscarPorId(id);
-        return rol != null ? ResponseEntity.ok(rol) : ResponseEntity.notFound().build();
+        if (rol == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<Rol> model = EntityModel.of(rol,
+                linkTo(methodOn(RolController.class).obtenerPorId(rol.getId_rol())).withSelfRel(),
+                linkTo(methodOn(RolController.class).listar()).withRel("listar"));
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Crear rol", description = "Crea un nuevo rol")
@@ -50,8 +68,11 @@ public class RolController {
             @ApiResponse(responseCode = "400", description = "Datos del rol inválidos")
     })
     @PostMapping("/crear")
-    public ResponseEntity<Rol> crear(@Valid @RequestBody Rol rol) {
-        return ResponseEntity.ok(rolService.guardarRol(rol));
+    public ResponseEntity<EntityModel<Rol>> crear(@Valid @RequestBody Rol rol) {
+        Rol saved = rolService.guardarRol(rol);
+        EntityModel<Rol> model = EntityModel.of(saved,
+                linkTo(methodOn(RolController.class).obtenerPorId(saved.getId_rol())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
 
@@ -62,11 +83,16 @@ public class RolController {
             @ApiResponse(responseCode = "404", description = "Rol no encontrado")
     })
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<Rol> actualizar(
+    public ResponseEntity<EntityModel<Rol>> actualizar(
             @Parameter(description = "Identificador del rol a actualizar") @PathVariable Long id,
             @Valid @RequestBody Rol rol) {
         Rol actualizado = rolService.actualizarRol(id, rol);
-        return actualizado != null ? ResponseEntity.ok(actualizado) : ResponseEntity.notFound().build();
+        if (actualizado == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<Rol> model = EntityModel.of(actualizado,
+                linkTo(methodOn(RolController.class).obtenerPorId(actualizado.getId_rol())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Eliminar rol", description = "Elimina un rol a partir de su identificador")

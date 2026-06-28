@@ -9,10 +9,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/certificados")
@@ -26,14 +31,26 @@ public class CertificadoController {
         this.certificadoService = certificadoService;
     }
 
+    // Construye un EntityModel con el link self del certificado.
+    private EntityModel<Certificado> toModel(Certificado certificado) {
+        return EntityModel.of(certificado,
+                linkTo(methodOn(CertificadoController.class).getById(certificado.getIdCertificado())).withSelfRel(),
+                linkTo(methodOn(CertificadoController.class).getAll()).withRel("listar"));
+    }
+
     @Operation(summary = "Listar todos los certificados",
             description = "Devuelve la lista completa de certificados registrados en el sistema.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de certificados obtenida correctamente")
     })
     @GetMapping("/listar")
-    public ResponseEntity<List<Certificado>> getAll() {
-        return ResponseEntity.ok(certificadoService.listarTodos());
+    public ResponseEntity<CollectionModel<EntityModel<Certificado>>> getAll() {
+        List<EntityModel<Certificado>> certificados = certificadoService.listarTodos().stream()
+                .map(this::toModel)
+                .toList();
+        CollectionModel<EntityModel<Certificado>> collectionModel = CollectionModel.of(certificados,
+                linkTo(methodOn(CertificadoController.class).getAll()).withSelfRel());
+        return ResponseEntity.ok(collectionModel);
     }
 
     @Operation(summary = "Obtener un certificado por su ID",
@@ -43,10 +60,11 @@ public class CertificadoController {
             @ApiResponse(responseCode = "404", description = "No existe un certificado con el ID indicado")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Certificado> getById(
+    public ResponseEntity<EntityModel<Certificado>> getById(
             @Parameter(description = "Identificador único del certificado a buscar", example = "1")
             @PathVariable Long id) {
         return certificadoService.getById(id)
+                .map(this::toModel)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -57,10 +75,15 @@ public class CertificadoController {
             @ApiResponse(responseCode = "200", description = "Lista de certificados del estudiante obtenida correctamente")
     })
     @GetMapping("/estudiante/{idEstudiante}")
-    public ResponseEntity<List<Certificado>> buscarPorEstudiante(
+    public ResponseEntity<CollectionModel<EntityModel<Certificado>>> buscarPorEstudiante(
             @Parameter(description = "Identificador del estudiante cuyos certificados se desean consultar", example = "EST-2026-001")
             @PathVariable String idEstudiante) {
-        return ResponseEntity.ok(certificadoService.listarPorEstudiante(idEstudiante));
+        List<EntityModel<Certificado>> certificados = certificadoService.listarPorEstudiante(idEstudiante).stream()
+                .map(this::toModel)
+                .toList();
+        CollectionModel<EntityModel<Certificado>> collectionModel = CollectionModel.of(certificados,
+                linkTo(methodOn(CertificadoController.class).buscarPorEstudiante(idEstudiante)).withSelfRel());
+        return ResponseEntity.ok(collectionModel);
     }
 
     @Operation(summary = "Generar un nuevo certificado",
@@ -70,8 +93,9 @@ public class CertificadoController {
             @ApiResponse(responseCode = "400", description = "Datos del certificado inválidos")
     })
     @PostMapping("/generar")
-    public ResponseEntity<Certificado> crear(@Valid @RequestBody Certificado certificado) {
-        return ResponseEntity.ok(certificadoService.generarCertificado(certificado));
+    public ResponseEntity<EntityModel<Certificado>> crear(@Valid @RequestBody Certificado certificado) {
+        Certificado generado = certificadoService.generarCertificado(certificado);
+        return ResponseEntity.ok(toModel(generado));
     }
 
     @Operation(summary = "Actualizar un certificado existente",
@@ -82,14 +106,14 @@ public class CertificadoController {
             @ApiResponse(responseCode = "404", description = "No existe un certificado con el ID indicado")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Certificado> actualizar(
+    public ResponseEntity<EntityModel<Certificado>> actualizar(
             @Parameter(description = "Identificador único del certificado a actualizar", example = "1")
             @PathVariable Long id,
             @Valid @RequestBody Certificado certificado) {
         return certificadoService.getById(id)
                 .map(existing -> {
                     certificado.setIdCertificado(id); // Setea el ID proveniente de la URL
-                    return ResponseEntity.ok(certificadoService.generarCertificado(certificado));
+                    return ResponseEntity.ok(toModel(certificadoService.generarCertificado(certificado)));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

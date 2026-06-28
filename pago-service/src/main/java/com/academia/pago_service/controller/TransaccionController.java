@@ -9,9 +9,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Tag(name = "Transacciones", description = "Gestión de transacciones asociadas a pagos")
 @RestController
@@ -27,8 +32,13 @@ public class TransaccionController {
             @ApiResponse(responseCode = "200", description = "Lista de transacciones obtenida correctamente")
     })
     @GetMapping("/listar")
-    public List<Transaccion> listar() {
-        return transaccionService.listarTodas();
+    public CollectionModel<EntityModel<Transaccion>> listar() {
+        List<EntityModel<Transaccion>> transacciones = transaccionService.listarTodas().stream()
+                .map(t -> EntityModel.of(t,
+                        linkTo(methodOn(TransaccionController.class).buscarPorId(t.getId_transaccion())).withSelfRel()))
+                .collect(Collectors.toList());
+        return CollectionModel.of(transacciones,
+                linkTo(methodOn(TransaccionController.class).listar()).withSelfRel());
     }
 
     @Operation(summary = "Obtener una transacción por ID",
@@ -38,10 +48,16 @@ public class TransaccionController {
             @ApiResponse(responseCode = "404", description = "Transacción no encontrada")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Transaccion> buscarPorId(
+    public ResponseEntity<EntityModel<Transaccion>> buscarPorId(
             @Parameter(description = "Identificador único de la transacción") @PathVariable Long id) {
         Transaccion t = transaccionService.buscarPorId(id);
-        return t != null ? ResponseEntity.ok(t) : ResponseEntity.notFound().build();
+        if (t == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<Transaccion> model = EntityModel.of(t,
+                linkTo(methodOn(TransaccionController.class).buscarPorId(t.getId_transaccion())).withSelfRel(),
+                linkTo(methodOn(TransaccionController.class).listar()).withRel("listar"));
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Generar una nueva transacción",
@@ -51,8 +67,11 @@ public class TransaccionController {
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
     @PostMapping("/generar")
-    public ResponseEntity<Transaccion> generar(@Valid @RequestBody Transaccion transaccion) {
-        return ResponseEntity.ok(transaccionService.registrarTransaccion(transaccion));
+    public ResponseEntity<EntityModel<Transaccion>> generar(@Valid @RequestBody Transaccion transaccion) {
+        Transaccion guardada = transaccionService.registrarTransaccion(transaccion);
+        EntityModel<Transaccion> model = EntityModel.of(guardada,
+                linkTo(methodOn(TransaccionController.class).buscarPorId(guardada.getId_transaccion())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Actualizar una transacción",
@@ -63,11 +82,16 @@ public class TransaccionController {
             @ApiResponse(responseCode = "404", description = "Transacción no encontrada")
     })
     @PutMapping("/actualizar/{id}")
-    public ResponseEntity<Transaccion> actualizar(
+    public ResponseEntity<EntityModel<Transaccion>> actualizar(
             @Parameter(description = "Identificador único de la transacción a actualizar") @PathVariable Long id,
             @Valid @RequestBody Transaccion t) {
         Transaccion actualizada = transaccionService.actualizarTransaccion(id, t);
-        return actualizada != null ? ResponseEntity.ok(actualizada) : ResponseEntity.notFound().build();
+        if (actualizada == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<Transaccion> model = EntityModel.of(actualizada,
+                linkTo(methodOn(TransaccionController.class).buscarPorId(actualizada.getId_transaccion())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Eliminar una transacción",

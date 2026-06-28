@@ -13,14 +13,23 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.academia.pago_service.model.Transaccion;
 import com.academia.pago_service.service.TransaccionService;
@@ -37,6 +46,17 @@ class TransaccionControllerTest {
 
     @InjectMocks
     private TransaccionController transaccionController;
+
+    @BeforeEach
+    void setUpRequestContext() {
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(new MockHttpServletRequest()));
+    }
+
+    @AfterEach
+    void tearDownRequestContext() {
+        RequestContextHolder.resetRequestAttributes();
+    }
 
     private Transaccion nuevaTransaccion(Long id) {
         Transaccion t = new Transaccion();
@@ -58,11 +78,13 @@ class TransaccionControllerTest {
         when(transaccionService.listarTodas()).thenReturn(transacciones);
 
         // When
-        List<Transaccion> result = transaccionController.listar();
+        CollectionModel<EntityModel<Transaccion>> result = transaccionController.listar();
 
         // Then
         assertNotNull(result);
-        assertEquals(2, result.size());
+        assertEquals(2, result.getContent().size());
+        assertTrue(result.getLink("self").isPresent());
+        result.getContent().forEach(em -> assertTrue(em.getLink("self").isPresent()));
         verify(transaccionService).listarTodas();
     }
 
@@ -78,11 +100,14 @@ class TransaccionControllerTest {
         when(transaccionService.buscarPorId(1L)).thenReturn(t);
 
         // When
-        ResponseEntity<Transaccion> response = transaccionController.buscarPorId(1L);
+        ResponseEntity<EntityModel<Transaccion>> response = transaccionController.buscarPorId(1L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(t, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(t, response.getBody().getContent());
+        assertTrue(response.getBody().getLink("self").isPresent());
+        assertTrue(response.getBody().getLink("listar").isPresent());
         verify(transaccionService).buscarPorId(1L);
     }
 
@@ -93,7 +118,7 @@ class TransaccionControllerTest {
         when(transaccionService.buscarPorId(99L)).thenReturn(null);
 
         // When
-        ResponseEntity<Transaccion> response = transaccionController.buscarPorId(99L);
+        ResponseEntity<EntityModel<Transaccion>> response = transaccionController.buscarPorId(99L);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -114,11 +139,13 @@ class TransaccionControllerTest {
         when(transaccionService.registrarTransaccion(entrada)).thenReturn(guardada);
 
         // When
-        ResponseEntity<Transaccion> response = transaccionController.generar(entrada);
+        ResponseEntity<EntityModel<Transaccion>> response = transaccionController.generar(entrada);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(guardada, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(guardada, response.getBody().getContent());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(transaccionService).registrarTransaccion(entrada);
     }
 
@@ -136,11 +163,13 @@ class TransaccionControllerTest {
                 .thenReturn(actualizada);
 
         // When
-        ResponseEntity<Transaccion> response = transaccionController.actualizar(1L, entrada);
+        ResponseEntity<EntityModel<Transaccion>> response = transaccionController.actualizar(1L, entrada);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(actualizada, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(actualizada, response.getBody().getContent());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(transaccionService).actualizarTransaccion(eq(1L), any(Transaccion.class));
     }
 
@@ -153,7 +182,7 @@ class TransaccionControllerTest {
                 .thenReturn(null);
 
         // When
-        ResponseEntity<Transaccion> response = transaccionController.actualizar(99L, entrada);
+        ResponseEntity<EntityModel<Transaccion>> response = transaccionController.actualizar(99L, entrada);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

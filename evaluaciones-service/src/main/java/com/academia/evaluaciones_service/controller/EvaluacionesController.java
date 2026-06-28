@@ -1,7 +1,12 @@
 package com.academia.evaluaciones_service.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
 
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,13 +38,23 @@ public class EvaluacionesController {
         this.evaluacionesService = evaluacionesService;
     }
 
+    private EntityModel<Evaluaciones> toModel(Evaluaciones evaluacion) {
+        return EntityModel.of(evaluacion,
+                linkTo(methodOn(EvaluacionesController.class).getEvaluacionById(evaluacion.getIdEvaluacion())).withSelfRel(),
+                linkTo(methodOn(EvaluacionesController.class).getAllEvaluaciones()).withRel("listar"));
+    }
+
     @Operation(summary = "Listar evaluaciones", description = "Obtiene la lista completa de evaluaciones registradas")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de evaluaciones obtenida correctamente")
     })
     @GetMapping
-    public ResponseEntity<List<Evaluaciones>> getAllEvaluaciones() {
-        return ResponseEntity.ok(evaluacionesService.getAllEvaluaciones());
+    public CollectionModel<EntityModel<Evaluaciones>> getAllEvaluaciones() {
+        List<EntityModel<Evaluaciones>> evaluaciones = evaluacionesService.getAllEvaluaciones().stream()
+                .map(this::toModel)
+                .toList();
+        return CollectionModel.of(evaluaciones,
+                linkTo(methodOn(EvaluacionesController.class).getAllEvaluaciones()).withSelfRel());
     }
 
     @Operation(summary = "Obtener evaluación por ID", description = "Obtiene una evaluación específica a partir de su identificador")
@@ -48,9 +63,10 @@ public class EvaluacionesController {
             @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Evaluaciones> getEvaluacionById(
+    public ResponseEntity<EntityModel<Evaluaciones>> getEvaluacionById(
             @Parameter(description = "Identificador de la evaluación") @PathVariable Long id) {
         return evaluacionesService.getEvaluacionById(id)
+                .map(this::toModel)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -61,8 +77,10 @@ public class EvaluacionesController {
             @ApiResponse(responseCode = "400", description = "Datos de la evaluación inválidos")
     })
     @PostMapping
-    public ResponseEntity<Evaluaciones> crearEvaluacion(@Valid @RequestBody Evaluaciones evaluaciones) {
-        return ResponseEntity.ok(evaluacionesService.guardar(evaluaciones));
+    public ResponseEntity<EntityModel<Evaluaciones>> crearEvaluacion(@Valid @RequestBody Evaluaciones evaluaciones) {
+        Evaluaciones saved = evaluacionesService.guardar(evaluaciones);
+        return ResponseEntity.ok(EntityModel.of(saved,
+                linkTo(methodOn(EvaluacionesController.class).getEvaluacionById(saved.getIdEvaluacion())).withSelfRel()));
     }
 
     @Operation(summary = "Actualizar evaluación", description = "Actualiza una evaluación existente identificada por su ID")
@@ -72,13 +90,15 @@ public class EvaluacionesController {
             @ApiResponse(responseCode = "404", description = "Evaluación no encontrada")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Evaluaciones> actualizar(
+    public ResponseEntity<EntityModel<Evaluaciones>> actualizar(
             @Parameter(description = "Identificador de la evaluación a actualizar") @PathVariable Long id,
             @Valid @RequestBody Evaluaciones evaluaciones) {
         return evaluacionesService.getEvaluacionById(id)
                 .map(existing -> {
                     evaluaciones.setIdEvaluacion(id);
-                    return ResponseEntity.ok(evaluacionesService.guardar(evaluaciones));
+                    Evaluaciones saved = evaluacionesService.guardar(evaluaciones);
+                    return ResponseEntity.ok(EntityModel.of(saved,
+                            linkTo(methodOn(EvaluacionesController.class).getEvaluacionById(saved.getIdEvaluacion())).withSelfRel()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -1,7 +1,12 @@
 package com.academia.evaluaciones_service.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
 
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,13 +38,23 @@ public class PreguntasController {
         this.preguntasService = preguntasService;
     }
 
+    private EntityModel<Preguntas> toModel(Preguntas pregunta) {
+        return EntityModel.of(pregunta,
+                linkTo(methodOn(PreguntasController.class).getById(pregunta.getIdPregunta())).withSelfRel(),
+                linkTo(methodOn(PreguntasController.class).getAll()).withRel("listar"));
+    }
+
     @Operation(summary = "Listar preguntas", description = "Obtiene la lista completa de preguntas registradas")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de preguntas obtenida correctamente")
     })
     @GetMapping
-    public ResponseEntity<List<Preguntas>> getAll() {
-        return ResponseEntity.ok(preguntasService.getAll());
+    public CollectionModel<EntityModel<Preguntas>> getAll() {
+        List<EntityModel<Preguntas>> preguntas = preguntasService.getAll().stream()
+                .map(this::toModel)
+                .toList();
+        return CollectionModel.of(preguntas,
+                linkTo(methodOn(PreguntasController.class).getAll()).withSelfRel());
     }
 
     @Operation(summary = "Obtener pregunta por ID", description = "Obtiene una pregunta específica a partir de su identificador")
@@ -48,9 +63,10 @@ public class PreguntasController {
             @ApiResponse(responseCode = "404", description = "Pregunta no encontrada")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Preguntas> getById(
+    public ResponseEntity<EntityModel<Preguntas>> getById(
             @Parameter(description = "Identificador de la pregunta") @PathVariable Long id) {
         return preguntasService.getById(id)
+                .map(this::toModel)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -61,8 +77,10 @@ public class PreguntasController {
             @ApiResponse(responseCode = "400", description = "Datos de la pregunta inválidos")
     })
     @PostMapping
-    public ResponseEntity<Preguntas> crear(@Valid @RequestBody Preguntas preguntas) {
-        return ResponseEntity.ok(preguntasService.guardar(preguntas));
+    public ResponseEntity<EntityModel<Preguntas>> crear(@Valid @RequestBody Preguntas preguntas) {
+        Preguntas saved = preguntasService.guardar(preguntas);
+        return ResponseEntity.ok(EntityModel.of(saved,
+                linkTo(methodOn(PreguntasController.class).getById(saved.getIdPregunta())).withSelfRel()));
     }
 
     @Operation(summary = "Actualizar pregunta", description = "Actualiza una pregunta existente identificada por su ID")
@@ -72,13 +90,15 @@ public class PreguntasController {
             @ApiResponse(responseCode = "404", description = "Pregunta no encontrada")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Preguntas> actualizar(
+    public ResponseEntity<EntityModel<Preguntas>> actualizar(
             @Parameter(description = "Identificador de la pregunta a actualizar") @PathVariable Long id,
             @Valid @RequestBody Preguntas preguntas) {
         return preguntasService.getById(id)
                 .map(existing -> {
                     preguntas.setIdPregunta(id);
-                    return ResponseEntity.ok(preguntasService.guardar(preguntas));
+                    Preguntas saved = preguntasService.guardar(preguntas);
+                    return ResponseEntity.ok(EntityModel.of(saved,
+                            linkTo(methodOn(PreguntasController.class).getById(saved.getIdPregunta())).withSelfRel()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

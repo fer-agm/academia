@@ -1,7 +1,13 @@
 package com.academia.clases_service.controller;
 
-import java.util.List;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,8 +44,16 @@ public class CategoriaController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Listado de categorías obtenido correctamente")
     })
-    public ResponseEntity<List<Categoria>> getAll() {
-        return ResponseEntity.ok(categoriaService.getAll());
+    public ResponseEntity<CollectionModel<EntityModel<Categoria>>> getAll() {
+        List<EntityModel<Categoria>> categorias = categoriaService.getAll().stream()
+                .map(categoria -> EntityModel.of(categoria,
+                        linkTo(methodOn(CategoriaController.class).getById(categoria.getIdCategoria())).withSelfRel()))
+                .collect(Collectors.toList());
+
+        CollectionModel<EntityModel<Categoria>> collectionModel = CollectionModel.of(categorias,
+                linkTo(methodOn(CategoriaController.class).getAll()).withSelfRel());
+
+        return ResponseEntity.ok(collectionModel);
     }
 
     @GetMapping("/{id}")
@@ -48,9 +62,12 @@ public class CategoriaController {
             @ApiResponse(responseCode = "200", description = "Categoría encontrada"),
             @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
     })
-    public ResponseEntity<Categoria> getById(
+    public ResponseEntity<EntityModel<Categoria>> getById(
             @Parameter(description = "Identificador de la categoría") @PathVariable Long id) {
         return categoriaService.getById(id)
+                .map(categoria -> EntityModel.of(categoria,
+                        linkTo(methodOn(CategoriaController.class).getById(id)).withSelfRel(),
+                        linkTo(methodOn(CategoriaController.class).getAll()).withRel("listar")))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -61,8 +78,11 @@ public class CategoriaController {
             @ApiResponse(responseCode = "200", description = "Categoría creada correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos de la categoría inválidos")
     })
-    public ResponseEntity<Categoria> crear(@Valid @RequestBody Categoria categoria) {
-        return ResponseEntity.ok(categoriaService.guardar(categoria));
+    public ResponseEntity<EntityModel<Categoria>> crear(@Valid @RequestBody Categoria categoria) {
+        Categoria guardada = categoriaService.guardar(categoria);
+        EntityModel<Categoria> model = EntityModel.of(guardada,
+                linkTo(methodOn(CategoriaController.class).getById(guardada.getIdCategoria())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @PutMapping("/{id}")
@@ -72,13 +92,16 @@ public class CategoriaController {
             @ApiResponse(responseCode = "400", description = "Datos de la categoría inválidos"),
             @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
     })
-    public ResponseEntity<Categoria> actualizar(
+    public ResponseEntity<EntityModel<Categoria>> actualizar(
             @Parameter(description = "Identificador de la categoría a actualizar") @PathVariable Long id,
             @Valid @RequestBody Categoria categoria) {
         return categoriaService.getById(id)
                 .map(existing -> {
                     categoria.setIdCategoria(id);
-                    return ResponseEntity.ok(categoriaService.guardar(categoria));
+                    Categoria guardada = categoriaService.guardar(categoria);
+                    EntityModel<Categoria> model = EntityModel.of(guardada,
+                            linkTo(methodOn(CategoriaController.class).getById(id)).withSelfRel());
+                    return ResponseEntity.ok(model);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

@@ -1,6 +1,7 @@
 package com.academia.clases_service.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,17 +13,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.academia.clases_service.model.Categoria;
 import com.academia.clases_service.service.CategoriaService;
@@ -40,12 +48,20 @@ class CategoriaControllerTest {
 
     @BeforeEach
     void setUp() {
+        // Required because the controller builds HATEOAS links via linkTo(methodOn(...))
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(new MockHttpServletRequest()));
         // Categoria(idCategoria, nombreCategoria, descripcionCategoria)
         categoria = new Categoria(1L, "Programacion", "Cursos de programacion");
     }
 
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
+    }
+
     @Test
-    void getAll_returnsOkWithList() {
+    void getAll_returnsOkWithCollectionModel() {
         // Given
         List<Categoria> categorias = Arrays.asList(
                 categoria,
@@ -53,12 +69,18 @@ class CategoriaControllerTest {
         when(categoriaService.getAll()).thenReturn(categorias);
 
         // When
-        ResponseEntity<List<Categoria>> response = categoriaController.getAll();
+        ResponseEntity<CollectionModel<EntityModel<Categoria>>> response = categoriaController.getAll();
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(categorias, response.getBody());
-        assertEquals(2, response.getBody().size());
+        assertNotNull(response.getBody());
+        Collection<EntityModel<Categoria>> content = response.getBody().getContent();
+        assertEquals(2, content.size());
+        // CollectionModel carries the self link added by the controller
+        assertTrue(response.getBody().hasLinks());
+        assertTrue(response.getBody().getLink("self").isPresent());
+        // each item carries its own self link
+        content.forEach(item -> assertTrue(item.hasLink("self")));
         verify(categoriaService, times(1)).getAll();
     }
 
@@ -68,11 +90,14 @@ class CategoriaControllerTest {
         when(categoriaService.getById(1L)).thenReturn(Optional.of(categoria));
 
         // When
-        ResponseEntity<Categoria> response = categoriaController.getById(1L);
+        ResponseEntity<EntityModel<Categoria>> response = categoriaController.getById(1L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(categoria, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(categoria, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
+        assertTrue(response.getBody().hasLink("listar"));
         verify(categoriaService).getById(1L);
     }
 
@@ -82,7 +107,7 @@ class CategoriaControllerTest {
         when(categoriaService.getById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Categoria> response = categoriaController.getById(99L);
+        ResponseEntity<EntityModel<Categoria>> response = categoriaController.getById(99L);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -98,11 +123,13 @@ class CategoriaControllerTest {
         when(categoriaService.guardar(toSave)).thenReturn(saved);
 
         // When
-        ResponseEntity<Categoria> response = categoriaController.crear(toSave);
+        ResponseEntity<EntityModel<Categoria>> response = categoriaController.crear(toSave);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(saved, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(saved, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
         verify(categoriaService).guardar(toSave);
     }
 
@@ -114,11 +141,13 @@ class CategoriaControllerTest {
         when(categoriaService.guardar(any(Categoria.class))).thenReturn(input);
 
         // When
-        ResponseEntity<Categoria> response = categoriaController.actualizar(1L, input);
+        ResponseEntity<EntityModel<Categoria>> response = categoriaController.actualizar(1L, input);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(input, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(input, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
         // The controller forces the path id onto the entity before saving
         assertEquals(1L, input.getIdCategoria());
         verify(categoriaService).getById(1L);
@@ -132,7 +161,7 @@ class CategoriaControllerTest {
         when(categoriaService.getById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Categoria> response = categoriaController.actualizar(99L, input);
+        ResponseEntity<EntityModel<Categoria>> response = categoriaController.actualizar(99L, input);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

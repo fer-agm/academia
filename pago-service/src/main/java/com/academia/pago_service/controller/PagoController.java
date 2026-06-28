@@ -5,6 +5,10 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -52,14 +56,17 @@ public class PagoController {
             @ApiResponse(responseCode = "404", description = "Curso asociado no existe")
     })
     @PostMapping
-    public ResponseEntity<PagoDto> crearPago(@Valid @RequestBody PagoDto pagoDto,
+    public ResponseEntity<EntityModel<PagoDto>> crearPago(@Valid @RequestBody PagoDto pagoDto,
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
         try {
             logger.info("POST /pagos - Creando pago: idPago={}, totalPagar={}",
                 pagoDto.getId_pago(), pagoDto.getTotalPagar());
             Pago nuevoPago = pagoService.guardar(pagoDto.toModel(), authHeader);
             logger.info("Pago creado exitosamente id={}", nuevoPago.getId_pago());
-            return ResponseEntity.ok(PagoDto.fromModel(nuevoPago));
+            PagoDto creado = PagoDto.fromModel(nuevoPago);
+            EntityModel<PagoDto> model = EntityModel.of(creado,
+                    linkTo(methodOn(PagoController.class).obtenerPago(creado.getId_pago())).withSelfRel());
+            return ResponseEntity.ok(model);
         } catch (Exception e) {
             logger.error("Error al crear pago: {}", e.getMessage(), e);
             throw e;
@@ -73,12 +80,17 @@ public class PagoController {
             @ApiResponse(responseCode = "200", description = "Lista de pagos obtenida correctamente")
     })
     @GetMapping("/listar")
-    public ResponseEntity<List<PagoDto>> listarPagos() {
+    public CollectionModel<EntityModel<PagoDto>> listarPagos() {
         logger.info("GET /pagos - Listando pagos");
         List<Pago> pagos = pagoService.listar();
-        List<PagoDto> dtos = pagos.stream().map(PagoDto::fromModel).collect(Collectors.toList());
+        List<EntityModel<PagoDto>> dtos = pagos.stream()
+                .map(PagoDto::fromModel)
+                .map(dto -> EntityModel.of(dto,
+                        linkTo(methodOn(PagoController.class).obtenerPago(dto.getId_pago())).withSelfRel()))
+                .collect(Collectors.toList());
         logger.info("Total pagos listados: {}", dtos.size());
-        return ResponseEntity.ok(dtos);
+        return CollectionModel.of(dtos,
+                linkTo(methodOn(PagoController.class).listarPagos()).withSelfRel());
     }
 
     @Operation(summary = "Obtener un pago por ID",
@@ -88,13 +100,17 @@ public class PagoController {
             @ApiResponse(responseCode = "404", description = "Pago no existe")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<PagoDto> obtenerPago(
+    public ResponseEntity<EntityModel<PagoDto>> obtenerPago(
             @Parameter(description = "Identificador único del pago") @PathVariable Long id) {
         logger.info("GET /pagos/{} - Obteniendo pago", id);
         try {
             Pago pago = pagoService.obtenerPorId(id);
             logger.info("Pago obtenido id={}", id);
-            return ResponseEntity.ok(PagoDto.fromModel(pago));
+            PagoDto dto = PagoDto.fromModel(pago);
+            EntityModel<PagoDto> model = EntityModel.of(dto,
+                    linkTo(methodOn(PagoController.class).obtenerPago(dto.getId_pago())).withSelfRel(),
+                    linkTo(methodOn(PagoController.class).listarPagos()).withRel("listar"));
+            return ResponseEntity.ok(model);
         } catch (Exception e) {
             logger.error("Error al obtener pago id={}: {}", id, e.getMessage());
             throw e;
@@ -109,14 +125,17 @@ public class PagoController {
             @ApiResponse(responseCode = "404", description = "Pago no existe")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<PagoDto> actualizarPago(
+    public ResponseEntity<EntityModel<PagoDto>> actualizarPago(
             @Parameter(description = "Identificador único del pago a actualizar") @PathVariable Long id,
             @Valid @RequestBody PagoDto pagoDto) {
         logger.info("PUT /pagos/{} - Actualizando pago", id);
         try {
             Pago actualizado = pagoService.actualizar(id, pagoDto.toModel());
             logger.info("Pago actualizado exitosamente id={}", id);
-            return ResponseEntity.ok(PagoDto.fromModel(actualizado));
+            PagoDto dto = PagoDto.fromModel(actualizado);
+            EntityModel<PagoDto> model = EntityModel.of(dto,
+                    linkTo(methodOn(PagoController.class).obtenerPago(dto.getId_pago())).withSelfRel());
+            return ResponseEntity.ok(model);
         } catch (Exception e) {
             logger.error("Error al actualizar pago id={}: {}", id, e.getMessage());
             throw e;

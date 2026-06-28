@@ -3,6 +3,7 @@ package com.academia.evaluaciones_service.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -12,13 +13,21 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.academia.evaluaciones_service.model.Evaluaciones;
 import com.academia.evaluaciones_service.service.EvaluacionesService;
@@ -32,6 +41,16 @@ class EvaluacionesControllerTest {
     @InjectMocks
     private EvaluacionesController evaluacionesController;
 
+    @BeforeEach
+    void setUp() {
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(new MockHttpServletRequest()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
+    }
+
     private Evaluaciones sampleEvaluacion() {
         return new Evaluaciones(1L, 5L, 40, 100);
     }
@@ -43,11 +62,15 @@ class EvaluacionesControllerTest {
         when(evaluacionesService.getAllEvaluaciones()).thenReturn(evaluaciones);
 
         // When
-        ResponseEntity<List<Evaluaciones>> response = evaluacionesController.getAllEvaluaciones();
+        CollectionModel<EntityModel<Evaluaciones>> response = evaluacionesController.getAllEvaluaciones();
 
         // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(evaluaciones, response.getBody());
+        assertEquals(1, response.getContent().size());
+        EntityModel<Evaluaciones> item = response.getContent().iterator().next();
+        assertSame(evaluaciones.get(0), item.getContent());
+        assertTrue(item.getLink(IanaLinkRelations.SELF).isPresent());
+        assertTrue(item.getLink("listar").isPresent());
+        assertTrue(response.getLink(IanaLinkRelations.SELF).isPresent());
         verify(evaluacionesService, times(1)).getAllEvaluaciones();
     }
 
@@ -58,11 +81,13 @@ class EvaluacionesControllerTest {
         when(evaluacionesService.getEvaluacionById(1L)).thenReturn(Optional.of(evaluacion));
 
         // When
-        ResponseEntity<Evaluaciones> response = evaluacionesController.getEvaluacionById(1L);
+        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.getEvaluacionById(1L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(evaluacion, response.getBody());
+        assertSame(evaluacion, response.getBody().getContent());
+        assertTrue(response.getBody().getLink(IanaLinkRelations.SELF).isPresent());
+        assertTrue(response.getBody().getLink("listar").isPresent());
         verify(evaluacionesService, times(1)).getEvaluacionById(1L);
     }
 
@@ -72,7 +97,7 @@ class EvaluacionesControllerTest {
         when(evaluacionesService.getEvaluacionById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Evaluaciones> response = evaluacionesController.getEvaluacionById(99L);
+        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.getEvaluacionById(99L);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -88,11 +113,12 @@ class EvaluacionesControllerTest {
         when(evaluacionesService.guardar(toSave)).thenReturn(saved);
 
         // When
-        ResponseEntity<Evaluaciones> response = evaluacionesController.crearEvaluacion(toSave);
+        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.crearEvaluacion(toSave);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(saved, response.getBody());
+        assertSame(saved, response.getBody().getContent());
+        assertTrue(response.getBody().getLink(IanaLinkRelations.SELF).isPresent());
         verify(evaluacionesService, times(1)).guardar(toSave);
     }
 
@@ -105,11 +131,12 @@ class EvaluacionesControllerTest {
         when(evaluacionesService.guardar(any(Evaluaciones.class))).thenReturn(incoming);
 
         // When
-        ResponseEntity<Evaluaciones> response = evaluacionesController.actualizar(1L, incoming);
+        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.actualizar(1L, incoming);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(incoming, response.getBody());
+        assertSame(incoming, response.getBody().getContent());
+        assertTrue(response.getBody().getLink(IanaLinkRelations.SELF).isPresent());
         assertEquals(1L, incoming.getIdEvaluacion());
         verify(evaluacionesService, times(1)).getEvaluacionById(1L);
         verify(evaluacionesService, times(1)).guardar(incoming);
@@ -122,7 +149,7 @@ class EvaluacionesControllerTest {
         when(evaluacionesService.getEvaluacionById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Evaluaciones> response = evaluacionesController.actualizar(99L, incoming);
+        ResponseEntity<EntityModel<Evaluaciones>> response = evaluacionesController.actualizar(99L, incoming);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

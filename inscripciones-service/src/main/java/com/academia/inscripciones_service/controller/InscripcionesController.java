@@ -1,6 +1,11 @@
 package com.academia.inscripciones_service.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.academia.inscripciones_service.model.Inscripciones;
@@ -14,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/inscripciones")
@@ -23,13 +29,23 @@ public class InscripcionesController {
     @Autowired
     private InscripcionesService inscripcionesService;
 
+    private EntityModel<Inscripciones> toModel(Inscripciones ins) {
+        return EntityModel.of(ins,
+                linkTo(methodOn(InscripcionesController.class).obtenerPorId(ins.getId_inscripcion())).withSelfRel(),
+                linkTo(methodOn(InscripcionesController.class).listar()).withRel("listar"));
+    }
+
     @GetMapping("/listar")
     @Operation(summary = "Listar todas las inscripciones", description = "Devuelve la lista completa de inscripciones registradas en el sistema")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de inscripciones obtenida correctamente")
     })
-    public List<Inscripciones> listar() {
-        return inscripcionesService.listarTodas();
+    public CollectionModel<EntityModel<Inscripciones>> listar() {
+        List<EntityModel<Inscripciones>> inscripciones = inscripcionesService.listarTodas().stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+        return CollectionModel.of(inscripciones,
+                linkTo(methodOn(InscripcionesController.class).listar()).withSelfRel());
     }
 
     @GetMapping("/{id}")
@@ -38,10 +54,10 @@ public class InscripcionesController {
         @ApiResponse(responseCode = "200", description = "Inscripción encontrada"),
         @ApiResponse(responseCode = "404", description = "Inscripción no encontrada")
     })
-    public ResponseEntity<Inscripciones> obtenerPorId(
+    public ResponseEntity<EntityModel<Inscripciones>> obtenerPorId(
             @Parameter(description = "Identificador único de la inscripción", example = "1") @PathVariable Long id) {
         Inscripciones ins = inscripcionesService.buscarPorId(id);
-        return ins != null ? ResponseEntity.ok(ins) : ResponseEntity.notFound().build();
+        return ins != null ? ResponseEntity.ok(toModel(ins)) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/estudiante/{run}")
@@ -49,9 +65,15 @@ public class InscripcionesController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Inscripciones del estudiante obtenidas correctamente")
     })
-    public ResponseEntity<List<Inscripciones>> obtenerPorEstudiante(
+    public ResponseEntity<CollectionModel<EntityModel<Inscripciones>>> obtenerPorEstudiante(
             @Parameter(description = "RUN del estudiante", example = "12345678-9") @PathVariable String run) {
-        return ResponseEntity.ok(inscripcionesService.listarPorEstudiante(run));
+        List<EntityModel<Inscripciones>> inscripciones = inscripcionesService.listarPorEstudiante(run).stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+        CollectionModel<EntityModel<Inscripciones>> model = CollectionModel.of(inscripciones,
+                linkTo(methodOn(InscripcionesController.class).obtenerPorEstudiante(run)).withSelfRel(),
+                linkTo(methodOn(InscripcionesController.class).listar()).withRel("listar"));
+        return ResponseEntity.ok(model);
     }
 
     @PostMapping("/inscribir")
@@ -60,8 +82,11 @@ public class InscripcionesController {
         @ApiResponse(responseCode = "200", description = "Inscripción creada correctamente"),
         @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
-    public ResponseEntity<Inscripciones> inscribir(@Valid @RequestBody Inscripciones inscripciones) {
-        return ResponseEntity.ok(inscripcionesService.crearInscripcion(inscripciones));
+    public ResponseEntity<EntityModel<Inscripciones>> inscribir(@Valid @RequestBody Inscripciones inscripciones) {
+        Inscripciones creada = inscripcionesService.crearInscripcion(inscripciones);
+        EntityModel<Inscripciones> model = EntityModel.of(creada,
+                linkTo(methodOn(InscripcionesController.class).obtenerPorId(creada.getId_inscripcion())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @PutMapping("/actualizar/{id}")
@@ -71,11 +96,16 @@ public class InscripcionesController {
         @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
         @ApiResponse(responseCode = "404", description = "Inscripción no encontrada")
     })
-    public ResponseEntity<Inscripciones> actualizar(
+    public ResponseEntity<EntityModel<Inscripciones>> actualizar(
             @Parameter(description = "Identificador único de la inscripción", example = "1") @PathVariable Long id,
             @Valid @RequestBody Inscripciones datos) {
         Inscripciones actualizada = inscripcionesService.actualizar(id, datos);
-        return actualizada != null ? ResponseEntity.ok(actualizada) : ResponseEntity.notFound().build();
+        if (actualizada == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<Inscripciones> model = EntityModel.of(actualizada,
+                linkTo(methodOn(InscripcionesController.class).obtenerPorId(actualizada.getId_inscripcion())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @DeleteMapping("/eliminar/{id}")

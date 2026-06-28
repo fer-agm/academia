@@ -1,7 +1,14 @@
 package com.academia.user_service.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.academia.user_service.model.User;
@@ -28,8 +35,13 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida correctamente")
     })
     @GetMapping("/usuarios/listar")
-    public List<User> listar() {
-        return userService.listarTodo();
+    public CollectionModel<EntityModel<User>> listar() {
+        List<EntityModel<User>> usuarios = userService.listarTodo().stream()
+                .map(user -> EntityModel.of(user,
+                        linkTo(methodOn(UserController.class).buscar(user.getId())).withSelfRel()))
+                .collect(Collectors.toList());
+        return CollectionModel.of(usuarios,
+                linkTo(methodOn(UserController.class).listar()).withSelfRel());
     }
 
     @Operation(summary = "Buscar usuario por ID", description = "Obtiene un usuario a partir de su identificador")
@@ -38,10 +50,16 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @GetMapping("/usuarios/buscar/{id}")
-    public ResponseEntity<User> buscar(
+    public ResponseEntity<EntityModel<User>> buscar(
             @Parameter(description = "Identificador del usuario") @PathVariable Long id) {
         User user = userService.buscarPorId(id);
-        return user != null ? ResponseEntity.ok(user) : ResponseEntity.notFound().build();
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<User> model = EntityModel.of(user,
+                linkTo(methodOn(UserController.class).buscar(user.getId())).withSelfRel(),
+                linkTo(methodOn(UserController.class).listar()).withRel("listar"));
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Crear usuario", description = "Crea un nuevo usuario y provisiona su credencial de acceso")
@@ -50,8 +68,11 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "Datos del usuario inválidos")
     })
     @PostMapping("/usuarios/crear")
-    public ResponseEntity<User> crear(@Valid @RequestBody User user) {
-        return ResponseEntity.ok(userService.guardarUsuario(user));
+    public ResponseEntity<EntityModel<User>> crear(@Valid @RequestBody User user) {
+        User saved = userService.guardarUsuario(user);
+        EntityModel<User> model = EntityModel.of(saved,
+                linkTo(methodOn(UserController.class).buscar(saved.getId())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Actualizar usuario", description = "Actualiza los datos de un usuario existente")
@@ -61,11 +82,16 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     })
     @PutMapping("/usuarios/actualizar/{id}")
-    public ResponseEntity<User> actualizar(
+    public ResponseEntity<EntityModel<User>> actualizar(
             @Parameter(description = "Identificador del usuario a actualizar") @PathVariable Long id,
             @Valid @RequestBody User userDetails) {
         User actualizado = userService.actualizarUsuario(id, userDetails);
-        return actualizado != null ? ResponseEntity.ok(actualizado) : ResponseEntity.notFound().build();
+        if (actualizado == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<User> model = EntityModel.of(actualizado,
+                linkTo(methodOn(UserController.class).buscar(actualizado.getId())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @Operation(summary = "Eliminar usuario", description = "Elimina un usuario a partir de su identificador")

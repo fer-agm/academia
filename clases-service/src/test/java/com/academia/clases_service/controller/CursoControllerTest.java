@@ -2,6 +2,7 @@ package com.academia.clases_service.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,18 +13,25 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.academia.clases_service.model.Curso;
 import com.academia.clases_service.service.CursoService;
@@ -41,12 +49,20 @@ class CursoControllerTest {
 
     @BeforeEach
     void setUp() {
+        // Required because the controller builds HATEOAS links via linkTo(methodOn(...))
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(new MockHttpServletRequest()));
         // Curso(idCurso, nombreCurso, duracionCurso, descripcionCurso, valorCurso, idCategoria, maxCupos)
         curso = new Curso(1L, "Java Basico", 40, "Curso introductorio", 100000.0, 10L, 30);
     }
 
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
+    }
+
     @Test
-    void getAll_returnsOkWithList() {
+    void getAll_returnsOkWithCollectionModel() {
         // Given
         List<Curso> cursos = Arrays.asList(
                 curso,
@@ -54,12 +70,16 @@ class CursoControllerTest {
         when(cursoService.getAll()).thenReturn(cursos);
 
         // When
-        ResponseEntity<List<Curso>> response = cursoController.getAll();
+        ResponseEntity<CollectionModel<EntityModel<Curso>>> response = cursoController.getAll();
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(cursos, response.getBody());
-        assertEquals(2, response.getBody().size());
+        assertNotNull(response.getBody());
+        Collection<EntityModel<Curso>> content = response.getBody().getContent();
+        assertEquals(2, content.size());
+        assertTrue(response.getBody().hasLinks());
+        assertTrue(response.getBody().getLink("self").isPresent());
+        content.forEach(item -> assertTrue(item.hasLink("self")));
         verify(cursoService, times(1)).getAll();
     }
 
@@ -69,11 +89,14 @@ class CursoControllerTest {
         when(cursoService.getById(1L)).thenReturn(Optional.of(curso));
 
         // When
-        ResponseEntity<Curso> response = cursoController.getById(1L);
+        ResponseEntity<EntityModel<Curso>> response = cursoController.getById(1L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(curso, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(curso, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
+        assertTrue(response.getBody().hasLink("listar"));
         verify(cursoService).getById(1L);
     }
 
@@ -83,7 +106,7 @@ class CursoControllerTest {
         when(cursoService.getById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Curso> response = cursoController.getById(99L);
+        ResponseEntity<EntityModel<Curso>> response = cursoController.getById(99L);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -92,32 +115,34 @@ class CursoControllerTest {
     }
 
     @Test
-    void getByCategoria_returnsOkWithList() {
+    void getByCategoria_returnsOkWithCollectionModel() {
         // Given
         List<Curso> cursos = Arrays.asList(curso);
         when(cursoService.getByCategoria(10L)).thenReturn(cursos);
 
         // When
-        ResponseEntity<List<Curso>> response = cursoController.getByCategoria(10L);
+        ResponseEntity<CollectionModel<EntityModel<Curso>>> response = cursoController.getByCategoria(10L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(cursos, response.getBody());
-        assertEquals(1, response.getBody().size());
+        assertNotNull(response.getBody());
+        assertEquals(1, response.getBody().getContent().size());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(cursoService).getByCategoria(10L);
     }
 
     @Test
-    void getByCategoria_returnsOkWithEmptyList() {
+    void getByCategoria_returnsOkWithEmptyCollection() {
         // Given
         when(cursoService.getByCategoria(999L)).thenReturn(Collections.emptyList());
 
         // When
-        ResponseEntity<List<Curso>> response = cursoController.getByCategoria(999L);
+        ResponseEntity<CollectionModel<EntityModel<Curso>>> response = cursoController.getByCategoria(999L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isEmpty());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().getContent().isEmpty());
         verify(cursoService).getByCategoria(999L);
     }
 
@@ -157,11 +182,13 @@ class CursoControllerTest {
         when(cursoService.guardar(toSave)).thenReturn(saved);
 
         // When
-        ResponseEntity<Curso> response = cursoController.crear(toSave);
+        ResponseEntity<EntityModel<Curso>> response = cursoController.crear(toSave);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(saved, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(saved, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
         verify(cursoService).guardar(toSave);
     }
 
@@ -173,11 +200,13 @@ class CursoControllerTest {
         when(cursoService.guardar(any(Curso.class))).thenReturn(input);
 
         // When
-        ResponseEntity<Curso> response = cursoController.actualizar(1L, input);
+        ResponseEntity<EntityModel<Curso>> response = cursoController.actualizar(1L, input);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(input, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(input, response.getBody().getContent());
+        assertTrue(response.getBody().hasLink("self"));
         // The controller forces the path id onto the entity before saving
         assertEquals(1L, input.getIdCurso());
         verify(cursoService).getById(1L);
@@ -191,7 +220,7 @@ class CursoControllerTest {
         when(cursoService.getById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Curso> response = cursoController.actualizar(99L, input);
+        ResponseEntity<EntityModel<Curso>> response = cursoController.actualizar(99L, input);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

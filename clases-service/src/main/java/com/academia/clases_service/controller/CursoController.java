@@ -1,7 +1,13 @@
 package com.academia.clases_service.controller;
 
-import java.util.List;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,8 +44,16 @@ public class CursoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Listado de cursos obtenido correctamente")
     })
-    public ResponseEntity<List<Curso>> getAll() {
-        return ResponseEntity.ok(cursoService.getAll());
+    public ResponseEntity<CollectionModel<EntityModel<Curso>>> getAll() {
+        List<EntityModel<Curso>> cursos = cursoService.getAll().stream()
+                .map(curso -> EntityModel.of(curso,
+                        linkTo(methodOn(CursoController.class).getById(curso.getIdCurso())).withSelfRel()))
+                .collect(Collectors.toList());
+
+        CollectionModel<EntityModel<Curso>> collectionModel = CollectionModel.of(cursos,
+                linkTo(methodOn(CursoController.class).getAll()).withSelfRel());
+
+        return ResponseEntity.ok(collectionModel);
     }
 
     @GetMapping("/{id}")
@@ -48,9 +62,12 @@ public class CursoController {
             @ApiResponse(responseCode = "200", description = "Curso encontrado"),
             @ApiResponse(responseCode = "404", description = "Curso no encontrado")
     })
-    public ResponseEntity<Curso> getById(
+    public ResponseEntity<EntityModel<Curso>> getById(
             @Parameter(description = "Identificador del curso") @PathVariable Long id) {
         return cursoService.getById(id)
+                .map(curso -> EntityModel.of(curso,
+                        linkTo(methodOn(CursoController.class).getById(id)).withSelfRel(),
+                        linkTo(methodOn(CursoController.class).getAll()).withRel("listar")))
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -60,9 +77,17 @@ public class CursoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Listado de cursos de la categoría obtenido correctamente")
     })
-    public ResponseEntity<List<Curso>> getByCategoria(
+    public ResponseEntity<CollectionModel<EntityModel<Curso>>> getByCategoria(
             @Parameter(description = "Identificador de la categoría") @PathVariable Long idCategoria) {
-        return ResponseEntity.ok(cursoService.getByCategoria(idCategoria));
+        List<EntityModel<Curso>> cursos = cursoService.getByCategoria(idCategoria).stream()
+                .map(curso -> EntityModel.of(curso,
+                        linkTo(methodOn(CursoController.class).getById(curso.getIdCurso())).withSelfRel()))
+                .collect(Collectors.toList());
+
+        CollectionModel<EntityModel<Curso>> collectionModel = CollectionModel.of(cursos,
+                linkTo(methodOn(CursoController.class).getByCategoria(idCategoria)).withSelfRel());
+
+        return ResponseEntity.ok(collectionModel);
     }
 
     @GetMapping("/{id}/existe")
@@ -81,8 +106,11 @@ public class CursoController {
             @ApiResponse(responseCode = "200", description = "Curso creado correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos del curso inválidos")
     })
-    public ResponseEntity<Curso> crear(@Valid @RequestBody Curso curso) {
-        return ResponseEntity.ok(cursoService.guardar(curso));
+    public ResponseEntity<EntityModel<Curso>> crear(@Valid @RequestBody Curso curso) {
+        Curso guardado = cursoService.guardar(curso);
+        EntityModel<Curso> model = EntityModel.of(guardado,
+                linkTo(methodOn(CursoController.class).getById(guardado.getIdCurso())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @PutMapping("/{id}")
@@ -92,13 +120,16 @@ public class CursoController {
             @ApiResponse(responseCode = "400", description = "Datos del curso inválidos"),
             @ApiResponse(responseCode = "404", description = "Curso no encontrado")
     })
-    public ResponseEntity<Curso> actualizar(
+    public ResponseEntity<EntityModel<Curso>> actualizar(
             @Parameter(description = "Identificador del curso a actualizar") @PathVariable Long id,
             @Valid @RequestBody Curso curso) {
         return cursoService.getById(id)
                 .map(existing -> {
                     curso.setIdCurso(id);
-                    return ResponseEntity.ok(cursoService.guardar(curso));
+                    Curso guardado = cursoService.guardar(curso);
+                    EntityModel<Curso> model = EntityModel.of(guardado,
+                            linkTo(methodOn(CursoController.class).getById(id)).withSelfRel());
+                    return ResponseEntity.ok(model);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

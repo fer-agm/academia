@@ -1,6 +1,11 @@
 package com.academia.inscripciones_service.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.academia.inscripciones_service.model.Cupos;
@@ -14,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cupos")
@@ -23,13 +29,23 @@ public class CuposController {
     @Autowired
     private CuposService cuposService;
 
+    private EntityModel<Cupos> toModel(Cupos cupo) {
+        return EntityModel.of(cupo,
+                linkTo(methodOn(CuposController.class).obtenerPorId(cupo.getId_cupo())).withSelfRel(),
+                linkTo(methodOn(CuposController.class).listar()).withRel("listar"));
+    }
+
     @GetMapping("/listar")
     @Operation(summary = "Listar todos los cupos", description = "Devuelve la lista completa de registros de cupos registrados en el sistema")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de cupos obtenida correctamente")
     })
-    public List<Cupos> listar() {
-        return cuposService.listarTodos();
+    public CollectionModel<EntityModel<Cupos>> listar() {
+        List<EntityModel<Cupos>> cupos = cuposService.listarTodos().stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+        return CollectionModel.of(cupos,
+                linkTo(methodOn(CuposController.class).listar()).withSelfRel());
     }
 
     @GetMapping("/{id}")
@@ -38,10 +54,10 @@ public class CuposController {
         @ApiResponse(responseCode = "200", description = "Cupo encontrado"),
         @ApiResponse(responseCode = "404", description = "Cupo no encontrado")
     })
-    public ResponseEntity<Cupos> obtenerPorId(
+    public ResponseEntity<EntityModel<Cupos>> obtenerPorId(
             @Parameter(description = "Identificador único del registro de cupos", example = "1") @PathVariable Long id) {
         Cupos cupo = cuposService.buscarPorId(id);
-        return cupo != null ? ResponseEntity.ok(cupo) : ResponseEntity.notFound().build();
+        return cupo != null ? ResponseEntity.ok(toModel(cupo)) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/curso/{idCurso}")
@@ -50,10 +66,17 @@ public class CuposController {
         @ApiResponse(responseCode = "200", description = "Cupos del curso encontrados"),
         @ApiResponse(responseCode = "404", description = "No existen cupos para el curso indicado")
     })
-    public ResponseEntity<Cupos> consultarPorCurso(
+    public ResponseEntity<EntityModel<Cupos>> consultarPorCurso(
             @Parameter(description = "Identificador del curso", example = "10") @PathVariable Long idCurso) {
         Cupos cupo = cuposService.obtenerPorCurso(idCurso);
-        return cupo != null ? ResponseEntity.ok(cupo) : ResponseEntity.notFound().build();
+        if (cupo == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<Cupos> model = EntityModel.of(cupo,
+                linkTo(methodOn(CuposController.class).consultarPorCurso(idCurso)).withSelfRel(),
+                linkTo(methodOn(CuposController.class).obtenerPorId(cupo.getId_cupo())).withRel("cupo"),
+                linkTo(methodOn(CuposController.class).listar()).withRel("listar"));
+        return ResponseEntity.ok(model);
     }
 
     @PostMapping("/crear")
@@ -62,8 +85,11 @@ public class CuposController {
         @ApiResponse(responseCode = "200", description = "Cupo creado correctamente"),
         @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
-    public ResponseEntity<Cupos> crear(@Valid @RequestBody Cupos cupo) {
-        return ResponseEntity.ok(cuposService.guardarCupo(cupo));
+    public ResponseEntity<EntityModel<Cupos>> crear(@Valid @RequestBody Cupos cupo) {
+        Cupos guardado = cuposService.guardarCupo(cupo);
+        EntityModel<Cupos> model = EntityModel.of(guardado,
+                linkTo(methodOn(CuposController.class).obtenerPorId(guardado.getId_cupo())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
     @PutMapping("/actualizar/{id}")
@@ -73,11 +99,16 @@ public class CuposController {
         @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
         @ApiResponse(responseCode = "404", description = "Cupo no encontrado")
     })
-    public ResponseEntity<Cupos> actualizar(
+    public ResponseEntity<EntityModel<Cupos>> actualizar(
             @Parameter(description = "Identificador único del registro de cupos", example = "1") @PathVariable Long id,
             @Valid @RequestBody Cupos cupo) {
         Cupos actualizado = cuposService.actualizar(id, cupo);
-        return actualizado != null ? ResponseEntity.ok(actualizado) : ResponseEntity.notFound().build();
+        if (actualizado == null) {
+            return ResponseEntity.notFound().build();
+        }
+        EntityModel<Cupos> model = EntityModel.of(actualizado,
+                linkTo(methodOn(CuposController.class).obtenerPorId(actualizado.getId_cupo())).withSelfRel());
+        return ResponseEntity.ok(model);
     }
 
 

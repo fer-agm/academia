@@ -2,13 +2,20 @@ package com.academia.certificado_service.controller;
 
 import com.academia.certificado_service.model.Certificado;
 import com.academia.certificado_service.service.CertificadoService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -30,6 +37,9 @@ import static org.mockito.Mockito.when;
  * Pure Mockito unit tests for {@link CertificadoController}.
  * No Spring context, no database, no @SpringBootTest, no @WebMvcTest, no MockMvc.
  * Controller methods are invoked directly and the {@link ResponseEntity} is asserted.
+ *
+ * Spring HATEOAS link building (WebMvcLinkBuilder) requires a current request context,
+ * so a mock request is registered before each test and cleared afterwards.
  */
 @ExtendWith(MockitoExtension.class)
 class CertificadoControllerTest {
@@ -39,6 +49,17 @@ class CertificadoControllerTest {
 
     @InjectMocks
     private CertificadoController controller;
+
+    @BeforeEach
+    void setUp() {
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(new MockHttpServletRequest()));
+    }
+
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
+    }
 
     // ---------- helpers ----------
 
@@ -63,13 +84,19 @@ class CertificadoControllerTest {
         when(certificadoService.listarTodos()).thenReturn(List.of(c1, c2));
 
         // When
-        ResponseEntity<List<Certificado>> response = controller.getAll();
+        ResponseEntity<CollectionModel<EntityModel<Certificado>>> response = controller.getAll();
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
-        assertSame(c1, response.getBody().get(0));
+        assertEquals(2, response.getBody().getContent().size());
+        // El contenido de los items se conserva
+        EntityModel<Certificado> first = response.getBody().getContent().iterator().next();
+        assertSame(c1, first.getContent());
+        // Link self de la colección
+        assertTrue(response.getBody().getLink("self").isPresent());
+        // Cada item tiene su link self
+        assertTrue(first.getLink("self").isPresent());
         verify(certificadoService, times(1)).listarTodos();
     }
 
@@ -79,12 +106,13 @@ class CertificadoControllerTest {
         when(certificadoService.listarTodos()).thenReturn(Collections.emptyList());
 
         // When
-        ResponseEntity<List<Certificado>> response = controller.getAll();
+        ResponseEntity<CollectionModel<EntityModel<Certificado>>> response = controller.getAll();
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().isEmpty());
+        assertTrue(response.getBody().getContent().isEmpty());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(certificadoService, times(1)).listarTodos();
     }
 
@@ -97,11 +125,14 @@ class CertificadoControllerTest {
         when(certificadoService.getById(5L)).thenReturn(Optional.of(c));
 
         // When
-        ResponseEntity<Certificado> response = controller.getById(5L);
+        ResponseEntity<EntityModel<Certificado>> response = controller.getById(5L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(c, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(c, response.getBody().getContent());
+        assertTrue(response.getBody().getLink("self").isPresent());
+        assertTrue(response.getBody().getLink("listar").isPresent());
         verify(certificadoService, times(1)).getById(5L);
     }
 
@@ -111,7 +142,7 @@ class CertificadoControllerTest {
         when(certificadoService.getById(99L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Certificado> response = controller.getById(99L);
+        ResponseEntity<EntityModel<Certificado>> response = controller.getById(99L);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -129,12 +160,15 @@ class CertificadoControllerTest {
         when(certificadoService.listarPorEstudiante("EST-1")).thenReturn(List.of(c1, c2));
 
         // When
-        ResponseEntity<List<Certificado>> response = controller.buscarPorEstudiante("EST-1");
+        ResponseEntity<CollectionModel<EntityModel<Certificado>>> response = controller.buscarPorEstudiante("EST-1");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        assertEquals(2, response.getBody().getContent().size());
+        assertTrue(response.getBody().getLink("self").isPresent());
+        EntityModel<Certificado> first = response.getBody().getContent().iterator().next();
+        assertTrue(first.getLink("self").isPresent());
         verify(certificadoService, times(1)).listarPorEstudiante("EST-1");
     }
 
@@ -144,12 +178,13 @@ class CertificadoControllerTest {
         when(certificadoService.listarPorEstudiante("DESCONOCIDO")).thenReturn(Collections.emptyList());
 
         // When
-        ResponseEntity<List<Certificado>> response = controller.buscarPorEstudiante("DESCONOCIDO");
+        ResponseEntity<CollectionModel<EntityModel<Certificado>>> response = controller.buscarPorEstudiante("DESCONOCIDO");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().isEmpty());
+        assertTrue(response.getBody().getContent().isEmpty());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(certificadoService, times(1)).listarPorEstudiante("DESCONOCIDO");
     }
 
@@ -163,11 +198,13 @@ class CertificadoControllerTest {
         when(certificadoService.generarCertificado(entrante)).thenReturn(generado);
 
         // When
-        ResponseEntity<Certificado> response = controller.crear(entrante);
+        ResponseEntity<EntityModel<Certificado>> response = controller.crear(entrante);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(generado, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(generado, response.getBody().getContent());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(certificadoService, times(1)).generarCertificado(entrante);
     }
 
@@ -183,11 +220,13 @@ class CertificadoControllerTest {
         when(certificadoService.generarCertificado(any(Certificado.class))).thenReturn(guardado);
 
         // When
-        ResponseEntity<Certificado> response = controller.actualizar(7L, entrante);
+        ResponseEntity<EntityModel<Certificado>> response = controller.actualizar(7L, entrante);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertSame(guardado, response.getBody());
+        assertNotNull(response.getBody());
+        assertSame(guardado, response.getBody().getContent());
+        assertTrue(response.getBody().getLink("self").isPresent());
         // El id de la URL debe haberse seteado en el cuerpo entrante antes de guardar
         assertEquals(7L, entrante.getIdCertificado());
         verify(certificadoService, times(1)).getById(7L);
@@ -201,7 +240,7 @@ class CertificadoControllerTest {
         when(certificadoService.getById(15L)).thenReturn(Optional.empty());
 
         // When
-        ResponseEntity<Certificado> response = controller.actualizar(15L, entrante);
+        ResponseEntity<EntityModel<Certificado>> response = controller.actualizar(15L, entrante);
 
         // Then
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());

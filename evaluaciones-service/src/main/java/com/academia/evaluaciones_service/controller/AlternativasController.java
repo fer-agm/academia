@@ -1,7 +1,12 @@
 package com.academia.evaluaciones_service.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.util.List;
 
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,13 +38,23 @@ public class AlternativasController {
         this.alternativasService = alternativasService;
     }
 
+    private EntityModel<Alternativas> toModel(Alternativas alternativa) {
+        return EntityModel.of(alternativa,
+                linkTo(methodOn(AlternativasController.class).getById(alternativa.getIdAlternativa())).withSelfRel(),
+                linkTo(methodOn(AlternativasController.class).getAll()).withRel("listar"));
+    }
+
     @Operation(summary = "Listar alternativas", description = "Obtiene la lista completa de alternativas registradas")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de alternativas obtenida correctamente")
     })
     @GetMapping
-    public ResponseEntity<List<Alternativas>> getAll() {
-        return ResponseEntity.ok(alternativasService.getAll());
+    public CollectionModel<EntityModel<Alternativas>> getAll() {
+        List<EntityModel<Alternativas>> alternativas = alternativasService.getAll().stream()
+                .map(this::toModel)
+                .toList();
+        return CollectionModel.of(alternativas,
+                linkTo(methodOn(AlternativasController.class).getAll()).withSelfRel());
     }
 
     @Operation(summary = "Obtener alternativa por ID", description = "Obtiene una alternativa específica a partir de su identificador")
@@ -48,9 +63,10 @@ public class AlternativasController {
             @ApiResponse(responseCode = "404", description = "Alternativa no encontrada")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<Alternativas> getById(
+    public ResponseEntity<EntityModel<Alternativas>> getById(
             @Parameter(description = "Identificador de la alternativa") @PathVariable Long id) {
         return alternativasService.getById(id)
+                .map(this::toModel)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -61,8 +77,10 @@ public class AlternativasController {
             @ApiResponse(responseCode = "400", description = "Datos de la alternativa inválidos")
     })
     @PostMapping
-    public ResponseEntity<Alternativas> crear(@Valid @RequestBody Alternativas alternativas) {
-        return ResponseEntity.ok(alternativasService.guardar(alternativas));
+    public ResponseEntity<EntityModel<Alternativas>> crear(@Valid @RequestBody Alternativas alternativas) {
+        Alternativas saved = alternativasService.guardar(alternativas);
+        return ResponseEntity.ok(EntityModel.of(saved,
+                linkTo(methodOn(AlternativasController.class).getById(saved.getIdAlternativa())).withSelfRel()));
     }
 
     @Operation(summary = "Actualizar alternativa", description = "Actualiza una alternativa existente identificada por su ID")
@@ -72,13 +90,15 @@ public class AlternativasController {
             @ApiResponse(responseCode = "404", description = "Alternativa no encontrada")
     })
     @PutMapping("/{id}")
-    public ResponseEntity<Alternativas> actualizar(
+    public ResponseEntity<EntityModel<Alternativas>> actualizar(
             @Parameter(description = "Identificador de la alternativa a actualizar") @PathVariable Long id,
             @Valid @RequestBody Alternativas alternativas) {
         return alternativasService.getById(id)
                 .map(existing -> {
                     alternativas.setIdAlternativa(id);
-                    return ResponseEntity.ok(alternativasService.guardar(alternativas));
+                    Alternativas saved = alternativasService.guardar(alternativas);
+                    return ResponseEntity.ok(EntityModel.of(saved,
+                            linkTo(methodOn(AlternativasController.class).getById(saved.getIdAlternativa())).withSelfRel()));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

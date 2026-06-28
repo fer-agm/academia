@@ -14,14 +14,23 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.academia.pago_service.dto.PagoDto;
 import com.academia.pago_service.exception.ResourceNotFoundException;
@@ -41,6 +50,17 @@ class PagoControllerTest {
 
     @InjectMocks
     private PagoController pagoController;
+
+    @BeforeEach
+    void setUpRequestContext() {
+        RequestContextHolder.setRequestAttributes(
+                new ServletRequestAttributes(new MockHttpServletRequest()));
+    }
+
+    @AfterEach
+    void tearDownRequestContext() {
+        RequestContextHolder.resetRequestAttributes();
+    }
 
     /** Builds a fully-populated Pago so PagoDto.fromModel(...) has no nulls. */
     private Pago nuevoPago(Long id) {
@@ -75,13 +95,15 @@ class PagoControllerTest {
         when(pagoService.guardar(any(Pago.class), eq("Bearer x"))).thenReturn(guardado);
 
         // When
-        ResponseEntity<PagoDto> response = pagoController.crearPago(dto, "Bearer x");
+        ResponseEntity<EntityModel<PagoDto>> response = pagoController.crearPago(dto, "Bearer x");
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().getId_pago());
-        assertEquals(119000, response.getBody().getTotalPagar());
+        assertNotNull(response.getBody().getContent());
+        assertEquals(1L, response.getBody().getContent().getId_pago());
+        assertEquals(119000, response.getBody().getContent().getTotalPagar());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(pagoService).guardar(any(Pago.class), eq("Bearer x"));
     }
 
@@ -93,11 +115,12 @@ class PagoControllerTest {
         when(pagoService.guardar(any(Pago.class), eq((String) null))).thenReturn(nuevoPago(2L));
 
         // When
-        ResponseEntity<PagoDto> response = pagoController.crearPago(dto, null);
+        ResponseEntity<EntityModel<PagoDto>> response = pagoController.crearPago(dto, null);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(pagoService).guardar(any(Pago.class), eq((String) null));
     }
 
@@ -127,12 +150,13 @@ class PagoControllerTest {
         when(pagoService.listar()).thenReturn(pagos);
 
         // When
-        ResponseEntity<List<PagoDto>> response = pagoController.listarPagos();
+        CollectionModel<EntityModel<PagoDto>> response = pagoController.listarPagos();
 
         // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
+        assertNotNull(response);
+        assertEquals(2, response.getContent().size());
+        assertTrue(response.getLink("self").isPresent());
+        response.getContent().forEach(em -> assertTrue(em.getLink("self").isPresent()));
         verify(pagoService).listar();
     }
 
@@ -143,12 +167,12 @@ class PagoControllerTest {
         when(pagoService.listar()).thenReturn(List.of());
 
         // When
-        ResponseEntity<List<PagoDto>> response = pagoController.listarPagos();
+        CollectionModel<EntityModel<PagoDto>> response = pagoController.listarPagos();
 
         // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(0, response.getBody().size());
+        assertNotNull(response);
+        assertEquals(0, response.getContent().size());
+        assertTrue(response.getLink("self").isPresent());
         verify(pagoService).listar();
     }
 
@@ -163,12 +187,15 @@ class PagoControllerTest {
         when(pagoService.obtenerPorId(1L)).thenReturn(nuevoPago(1L));
 
         // When
-        ResponseEntity<PagoDto> response = pagoController.obtenerPago(1L);
+        ResponseEntity<EntityModel<PagoDto>> response = pagoController.obtenerPago(1L);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().getId_pago());
+        assertNotNull(response.getBody().getContent());
+        assertEquals(1L, response.getBody().getContent().getId_pago());
+        assertTrue(response.getBody().getLink("self").isPresent());
+        assertTrue(response.getBody().getLink("listar").isPresent());
         verify(pagoService).obtenerPorId(1L);
     }
 
@@ -197,12 +224,14 @@ class PagoControllerTest {
         when(pagoService.actualizar(eq(1L), any(Pago.class))).thenReturn(actualizado);
 
         // When
-        ResponseEntity<PagoDto> response = pagoController.actualizarPago(1L, dto);
+        ResponseEntity<EntityModel<PagoDto>> response = pagoController.actualizarPago(1L, dto);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().getId_pago());
+        assertNotNull(response.getBody().getContent());
+        assertEquals(1L, response.getBody().getContent().getId_pago());
+        assertTrue(response.getBody().getLink("self").isPresent());
         verify(pagoService).actualizar(eq(1L), any(Pago.class));
     }
 
