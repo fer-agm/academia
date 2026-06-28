@@ -2,6 +2,13 @@ package com.academia.certificado_service.controller;
 
 import com.academia.certificado_service.model.Certificado;
 import com.academia.certificado_service.service.CertificadoService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -9,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/certificados")
+@Tag(name = "Certificados", description = "Operaciones para la generación y gestión de certificados de estudiantes")
 public class CertificadoController {
 
     private final CertificadoService certificadoService;
@@ -18,30 +26,66 @@ public class CertificadoController {
         this.certificadoService = certificadoService;
     }
 
+    @Operation(summary = "Listar todos los certificados",
+            description = "Devuelve la lista completa de certificados registrados en el sistema.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de certificados obtenida correctamente")
+    })
     @GetMapping("/listar")
     public ResponseEntity<List<Certificado>> getAll() {
         return ResponseEntity.ok(certificadoService.listarTodos());
     }
 
+    @Operation(summary = "Obtener un certificado por su ID",
+            description = "Busca y devuelve un certificado a partir de su identificador único.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Certificado encontrado"),
+            @ApiResponse(responseCode = "404", description = "No existe un certificado con el ID indicado")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<Certificado> getById(@PathVariable Long id) {
+    public ResponseEntity<Certificado> getById(
+            @Parameter(description = "Identificador único del certificado a buscar", example = "1")
+            @PathVariable Long id) {
         return certificadoService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Listar certificados por estudiante",
+            description = "Devuelve todos los certificados asociados a un estudiante determinado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de certificados del estudiante obtenida correctamente")
+    })
     @GetMapping("/estudiante/{idEstudiante}")
-    public ResponseEntity<List<Certificado>> buscarPorEstudiante(@PathVariable String idEstudiante) {
+    public ResponseEntity<List<Certificado>> buscarPorEstudiante(
+            @Parameter(description = "Identificador del estudiante cuyos certificados se desean consultar", example = "EST-2026-001")
+            @PathVariable String idEstudiante) {
         return ResponseEntity.ok(certificadoService.listarPorEstudiante(idEstudiante));
     }
 
+    @Operation(summary = "Generar un nuevo certificado",
+            description = "Crea un nuevo certificado. La fecha de emisión y el código se generan automáticamente en el servidor.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Certificado generado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del certificado inválidos")
+    })
     @PostMapping("/generar")
-    public ResponseEntity<Certificado> crear(@RequestBody Certificado certificado) {
+    public ResponseEntity<Certificado> crear(@Valid @RequestBody Certificado certificado) {
         return ResponseEntity.ok(certificadoService.generarCertificado(certificado));
     }
 
+    @Operation(summary = "Actualizar un certificado existente",
+            description = "Actualiza los datos de un certificado identificado por su ID. Si la fecha de emisión o el código no se envían, se conservan los valores existentes.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Certificado actualizado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del certificado inválidos"),
+            @ApiResponse(responseCode = "404", description = "No existe un certificado con el ID indicado")
+    })
     @PutMapping("/{id}")
-    public ResponseEntity<Certificado> actualizar(@PathVariable Long id, @RequestBody Certificado certificado) {
+    public ResponseEntity<Certificado> actualizar(
+            @Parameter(description = "Identificador único del certificado a actualizar", example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody Certificado certificado) {
         return certificadoService.getById(id)
                 .map(existing -> {
                     certificado.setIdCertificado(id); // Setea el ID proveniente de la URL
@@ -50,8 +94,16 @@ public class CertificadoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Operation(summary = "Eliminar un certificado",
+            description = "Elimina un certificado a partir de su identificador único.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Certificado eliminado correctamente"),
+            @ApiResponse(responseCode = "404", description = "No existe un certificado con el ID indicado")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> borrar(@PathVariable Long id) {
+    public ResponseEntity<Void> borrar(
+            @Parameter(description = "Identificador único del certificado a eliminar", example = "1")
+            @PathVariable Long id) {
         return certificadoService.getById(id)
                 .map(existing -> {
                     certificadoService.borrar(id);

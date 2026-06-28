@@ -15,8 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.academia.clases_service.model.Curso;
 import com.academia.clases_service.service.CursoService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/cursos")
+@Tag(name = "Cursos", description = "Operaciones para la gestión de cursos")
 public class CursoController {
 
     private final CursoService cursoService;
@@ -26,34 +34,67 @@ public class CursoController {
     }
 
     @GetMapping ("/listar")
+    @Operation(summary = "Listar cursos", description = "Obtiene la lista de todos los cursos registrados")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Listado de cursos obtenido correctamente")
+    })
     public ResponseEntity<List<Curso>> getAll() {
         return ResponseEntity.ok(cursoService.getAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Curso> getById(@PathVariable Long id) {
+    @Operation(summary = "Obtener curso por ID", description = "Busca y devuelve un curso a partir de su identificador")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Curso encontrado"),
+            @ApiResponse(responseCode = "404", description = "Curso no encontrado")
+    })
+    public ResponseEntity<Curso> getById(
+            @Parameter(description = "Identificador del curso") @PathVariable Long id) {
         return cursoService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/categoria/{idCategoria}")
-    public ResponseEntity<List<Curso>> getByCategoria(@PathVariable Long idCategoria) {
+    @Operation(summary = "Listar cursos por categoría", description = "Obtiene los cursos que pertenecen a una categoría determinada")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Listado de cursos de la categoría obtenido correctamente")
+    })
+    public ResponseEntity<List<Curso>> getByCategoria(
+            @Parameter(description = "Identificador de la categoría") @PathVariable Long idCategoria) {
         return ResponseEntity.ok(cursoService.getByCategoria(idCategoria));
     }
 
     @GetMapping("/{id}/existe")
-    public ResponseEntity<Boolean> existe(@PathVariable Long id) {
+    @Operation(summary = "Verificar existencia de curso", description = "Indica si existe un curso con el identificador indicado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Verificación realizada correctamente")
+    })
+    public ResponseEntity<Boolean> existe(
+            @Parameter(description = "Identificador del curso a verificar") @PathVariable Long id) {
         return ResponseEntity.ok(cursoService.getById(id).isPresent());
     }
 
     @PostMapping
-    public ResponseEntity<Curso> crear(@RequestBody Curso curso) {
+    @Operation(summary = "Crear curso", description = "Registra un nuevo curso")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Curso creado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del curso inválidos")
+    })
+    public ResponseEntity<Curso> crear(@Valid @RequestBody Curso curso) {
         return ResponseEntity.ok(cursoService.guardar(curso));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Curso> actualizar(@PathVariable Long id, @RequestBody Curso curso) {
+    @Operation(summary = "Actualizar curso", description = "Actualiza los datos de un curso existente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Curso actualizado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos del curso inválidos"),
+            @ApiResponse(responseCode = "404", description = "Curso no encontrado")
+    })
+    public ResponseEntity<Curso> actualizar(
+            @Parameter(description = "Identificador del curso a actualizar") @PathVariable Long id,
+            @Valid @RequestBody Curso curso) {
         return cursoService.getById(id)
                 .map(existing -> {
                     curso.setIdCurso(id);
@@ -63,7 +104,13 @@ public class CursoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> borrar(@PathVariable Long id) {
+    @Operation(summary = "Eliminar curso", description = "Elimina un curso a partir de su identificador")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Curso eliminado correctamente"),
+            @ApiResponse(responseCode = "404", description = "Curso no encontrado")
+    })
+    public ResponseEntity<Void> borrar(
+            @Parameter(description = "Identificador del curso a eliminar") @PathVariable Long id) {
         return cursoService.getById(id)
                 .map(existing -> {
                     cursoService.borrar(id);

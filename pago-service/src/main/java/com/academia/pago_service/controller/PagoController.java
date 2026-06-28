@@ -21,11 +21,18 @@ import com.academia.pago_service.dto.PagoDto;
 import com.academia.pago_service.model.Pago;
 import com.academia.pago_service.service.PagoService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.validation.Valid;
 
 
 
 
+@Tag(name = "Pagos", description = "Gestión de pagos de cursos: creación, consulta, actualización y eliminación")
 @RestController
 @RequestMapping("/api/pagos")
 public class PagoController {
@@ -36,6 +43,14 @@ public class PagoController {
         this.pagoService = pagoService;
     }
 
+    @Operation(summary = "Crear un nuevo pago",
+            description = "Registra un nuevo pago. El IVA, total a pagar y la fecha se calculan automáticamente. "
+                    + "Valida la existencia del curso asociado antes de persistir.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago creado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos o curso no validable"),
+            @ApiResponse(responseCode = "404", description = "Curso asociado no existe")
+    })
     @PostMapping
     public ResponseEntity<PagoDto> crearPago(@Valid @RequestBody PagoDto pagoDto,
             @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader) {
@@ -52,6 +67,11 @@ public class PagoController {
     }
 
 
+    @Operation(summary = "Listar todos los pagos",
+            description = "Devuelve la lista completa de pagos registrados.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de pagos obtenida correctamente")
+    })
     @GetMapping("/listar")
     public ResponseEntity<List<PagoDto>> listarPagos() {
         logger.info("GET /pagos - Listando pagos");
@@ -61,8 +81,15 @@ public class PagoController {
         return ResponseEntity.ok(dtos);
     }
 
+    @Operation(summary = "Obtener un pago por ID",
+            description = "Devuelve el pago correspondiente al identificador indicado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago encontrado"),
+            @ApiResponse(responseCode = "404", description = "Pago no existe")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<PagoDto> obtenerPago(@PathVariable Long id) {
+    public ResponseEntity<PagoDto> obtenerPago(
+            @Parameter(description = "Identificador único del pago") @PathVariable Long id) {
         logger.info("GET /pagos/{} - Obteniendo pago", id);
         try {
             Pago pago = pagoService.obtenerPorId(id);
@@ -74,8 +101,17 @@ public class PagoController {
         }
     }
 
+    @Operation(summary = "Actualizar un pago existente",
+            description = "Actualiza los datos de un pago. El IVA y el total a pagar se recalculan automáticamente.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago actualizado correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
+            @ApiResponse(responseCode = "404", description = "Pago no existe")
+    })
     @PutMapping("/{id}")
-    public ResponseEntity<PagoDto> actualizarPago(@PathVariable Long id, @Valid @RequestBody PagoDto pagoDto) {
+    public ResponseEntity<PagoDto> actualizarPago(
+            @Parameter(description = "Identificador único del pago a actualizar") @PathVariable Long id,
+            @Valid @RequestBody PagoDto pagoDto) {
         logger.info("PUT /pagos/{} - Actualizando pago", id);
         try {
             Pago actualizado = pagoService.actualizar(id, pagoDto.toModel());
@@ -87,8 +123,15 @@ public class PagoController {
         }
     }
 
+    @Operation(summary = "Eliminar un pago",
+            description = "Elimina el pago correspondiente al identificador indicado.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pago eliminado correctamente"),
+            @ApiResponse(responseCode = "404", description = "Pago no existe")
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminarPago(@PathVariable Long id) {
+    public ResponseEntity<String> eliminarPago(
+            @Parameter(description = "Identificador único del pago a eliminar") @PathVariable Long id) {
         logger.info("DELETE /pagos/{} - Eliminando pago", id);
         try {
             pagoService.eliminar(id);

@@ -13,7 +13,10 @@ import com.academia.auth_service.dto.MessageResponse;
 import com.academia.auth_service.service.UsuarioService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,8 +27,12 @@ public class AuthController {
     private UsuarioService usuarioService;
 
     @Operation(summary = "Iniciar sesión", description = "Valida run + clave y devuelve un token JWT válido por 1 hora.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Petición procesada. status=ok con token JWT si las credenciales son válidas; status=error y token vacío si no lo son"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos (run o clave en blanco)")
+    })
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody AuthRequest request) {
+    public LoginResponse login(@Valid @RequestBody AuthRequest request) {
         String token = usuarioService.login(request.getRun(), request.getClave());
         if (token == null) {
             return new LoginResponse("error", "");
@@ -34,8 +41,12 @@ public class AuthController {
     }
 
     @Operation(summary = "Registrar usuario", description = "Crea un usuario con run + clave.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Petición procesada. Mensaje de éxito si se creó el usuario, o aviso de que el usuario ya existe"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos (run o clave en blanco)")
+    })
     @PostMapping("/registrar")
-    public MessageResponse register(@RequestBody AuthRequest request) {
+    public MessageResponse register(@Valid @RequestBody AuthRequest request) {
         String resultado = usuarioService.register(request.getRun(), request.getClave());
         return new MessageResponse(resultado);
     }

@@ -15,8 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.academia.clases_service.model.Categoria;
 import com.academia.clases_service.service.CategoriaService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/categorias")
+@Tag(name = "Categorías", description = "Operaciones para la gestión de categorías de cursos")
 public class CategoriaController {
 
     private final CategoriaService categoriaService;
@@ -26,24 +34,47 @@ public class CategoriaController {
     }
 
     @GetMapping ("/listar")
+    @Operation(summary = "Listar categorías", description = "Obtiene la lista de todas las categorías registradas")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Listado de categorías obtenido correctamente")
+    })
     public ResponseEntity<List<Categoria>> getAll() {
         return ResponseEntity.ok(categoriaService.getAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Categoria> getById(@PathVariable Long id) {
+    @Operation(summary = "Obtener categoría por ID", description = "Busca y devuelve una categoría a partir de su identificador")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categoría encontrada"),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
+    })
+    public ResponseEntity<Categoria> getById(
+            @Parameter(description = "Identificador de la categoría") @PathVariable Long id) {
         return categoriaService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Categoria> crear(@RequestBody Categoria categoria) {
+    @Operation(summary = "Crear categoría", description = "Registra una nueva categoría")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categoría creada correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de la categoría inválidos")
+    })
+    public ResponseEntity<Categoria> crear(@Valid @RequestBody Categoria categoria) {
         return ResponseEntity.ok(categoriaService.guardar(categoria));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Categoria> actualizar(@PathVariable Long id, @RequestBody Categoria categoria) {
+    @Operation(summary = "Actualizar categoría", description = "Actualiza los datos de una categoría existente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categoría actualizada correctamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de la categoría inválidos"),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
+    })
+    public ResponseEntity<Categoria> actualizar(
+            @Parameter(description = "Identificador de la categoría a actualizar") @PathVariable Long id,
+            @Valid @RequestBody Categoria categoria) {
         return categoriaService.getById(id)
                 .map(existing -> {
                     categoria.setIdCategoria(id);
@@ -53,7 +84,13 @@ public class CategoriaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> borrar(@PathVariable Long id) {
+    @Operation(summary = "Eliminar categoría", description = "Elimina una categoría a partir de su identificador")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Categoría eliminada correctamente"),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada")
+    })
+    public ResponseEntity<Void> borrar(
+            @Parameter(description = "Identificador de la categoría a eliminar") @PathVariable Long id) {
         return categoriaService.getById(id)
                 .map(existing -> {
                     categoriaService.borrar(id);
