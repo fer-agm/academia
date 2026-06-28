@@ -22,6 +22,12 @@ public class UserService {
 
     public User guardarUsuario(User user) {
         log.info("[UserService] Creando usuario con RUN: {}", user.getRun());
+        if (userRepository.findByRun(user.getRun()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un usuario con el run " + user.getRun());
+        }
+        if (user.getEmail() != null && userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un usuario con el email " + user.getEmail());
+        }
         if (user.getIdRol() == null || !rolRepository.existsById(user.getIdRol())) {
             throw new IllegalArgumentException("El rol con id " + user.getIdRol() + " no existe");
         }

@@ -127,6 +127,35 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("guardarUsuario: throws when the run already exists")
+    void guardarUsuario_throwsWhenRunExists() {
+        // Given
+        User user = buildUser();
+        when(userRepository.findByRun("11111111-1")).thenReturn(Optional.of(buildUser()));
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.guardarUsuario(user));
+        assertEquals("Ya existe un usuario con el run 11111111-1", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("guardarUsuario: throws when the email already exists")
+    void guardarUsuario_throwsWhenEmailExists() {
+        // Given
+        User user = buildUser();
+        when(userRepository.findByRun("11111111-1")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("aperez@banca.me")).thenReturn(Optional.of(buildUser()));
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.guardarUsuario(user));
+        assertEquals("Ya existe un usuario con el email aperez@banca.me", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("listarTodo: returns all users from the repository")
     void listarTodo_returnsAllUsers() {
         // Given
