@@ -87,6 +87,7 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     use-root-path: true
+    persist-authorization: true
   swagger-ui.urls[0].name: 1. Autenticación (Auth)
   swagger-ui.urls[0].url: /v3/api-docs/auth
   swagger-ui.urls[1].name: 2. Calificaciones
