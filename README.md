@@ -51,7 +51,7 @@ swagger hace un menú desplegable para elegir el servicio y expone su propio v3/
 
 
 autenticación
-usando post  /api/auth/login con {'run':'xxxxxxxx-x','clave':'clave'} te devuelve un token jw que dura 1 hora.
+usando post  /api/auth/login con {'run':'xxxxxxxx-x','clave':'clave'} te devuelve un token jwt que dura 8 horas.
 usando el authorization: Bearer token, el gateway valida el token y puedes ver los otros microservicios.
 
 
@@ -62,7 +62,7 @@ ejecutar con docker
     docker compose logs -f auth-service
     docker compose down
 
-se abre http://localhost:8080/swagger-ui.htm
+se abre http://localhost:8080/swagger-ui.html
 
 
 
