@@ -22,3 +22,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Internal docs — keep local, not on GitHub
+docs/
