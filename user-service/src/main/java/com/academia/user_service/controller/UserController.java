@@ -72,7 +72,7 @@ public class UserController {
         return ResponseEntity.ok(userService.existePorRun(run));
     }
 
-    @Operation(summary = "Crear usuario", description = "Crea un nuevo usuario y provisiona su credencial de acceso")
+    @Operation(summary = "Crear usuario", description = "Crea un nuevo usuario. Endpoint público (no requiere token); el usuario podrá iniciar sesión con su run y clave.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Usuario creado correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos del usuario inválidos")
