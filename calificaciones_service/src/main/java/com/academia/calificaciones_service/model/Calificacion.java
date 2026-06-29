@@ -1,8 +1,14 @@
 package com.academia.calificaciones_service.model;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Entity
@@ -11,10 +17,15 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Calificacion {
+
+    // PK propia de la calificación (autogenerada).
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Column(name = "id_evaluacion")
+    @Column(name = "id_calificacion")
+    private Long idCalificacion;
+
+    // FK: a qué evaluación pertenece esta calificación (la envía el cliente).
+    @Column(name = "id_evaluacion", nullable = false)
     private Long idEvaluacion;
 
     @Column(name = "id_estudiante", nullable = false)

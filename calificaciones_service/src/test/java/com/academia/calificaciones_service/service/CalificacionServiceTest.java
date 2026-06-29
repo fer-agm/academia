@@ -65,33 +65,35 @@ class CalificacionServiceTest {
     @BeforeEach
     void setUp() {
         // @Value fields are not populated outside Spring; inject format-string URLs manually.
+        ReflectionTestUtils.setField(service, "evaluacionExistsUrl", EVALUACION_URL);
         ReflectionTestUtils.setField(service, "usuarioExistsUrl", USUARIO_URL);
     }
 
     /**
-     * Stubs the WebClient fluent chain. guardar() validates evaluacion first, then estudiante;
-     * successive block() invocations return the provided answers in that order.
+     * Stubs the WebClient fluent chain. guardar() valida la evaluación primero y el estudiante después;
+     * las llamadas sucesivas a block() devuelven los valores dados en ese orden.
      */
     @SuppressWarnings("unchecked")
-    private void stubExistenceChecks(Boolean primero, Boolean segundo) {
+    private void stubExistenceChecks(Boolean evaluacion, Boolean estudiante) {
         Mono<Boolean> mono = mock(Mono.class);
         lenient().doReturn(requestHeadersUriSpec).when(webClient).get();
         lenient().doReturn(requestHeadersSpec).when(requestHeadersUriSpec).uri(anyString());
         lenient().doReturn(requestHeadersSpec).when(requestHeadersSpec).headers(any());
         lenient().doReturn(responseSpec).when(requestHeadersSpec).retrieve();
         lenient().doReturn(mono).when(responseSpec).bodyToMono(Boolean.class);
-        lenient().doReturn(primero, segundo).when(mono).block();
+        lenient().doReturn(evaluacion, estudiante).when(mono).block();
     }
 
-    private Calificacion buildEntity(Long id) {
-        return new Calificacion(id, "EST-001", LocalDate.of(2026, 1, 15), 6.5);
+    // Calificacion(idCalificacion, idEvaluacion, idEstudiante, fecha, nota)
+    private Calificacion buildEntity(Long idCalificacion) {
+        return new Calificacion(idCalificacion, 10L, "EST-001", LocalDate.of(2026, 1, 15), 6.5);
     }
 
     @Test
     void getAll_returnsMappedDtoList() {
         // Given
-        Calificacion entity1 = new Calificacion(1L, "EST-001", LocalDate.of(2026, 1, 15), 6.5);
-        Calificacion entity2 = new Calificacion(2L, "EST-002", LocalDate.of(2026, 2, 20), 4.0);
+        Calificacion entity1 = new Calificacion(1L, 10L, "EST-001", LocalDate.of(2026, 1, 15), 6.5);
+        Calificacion entity2 = new Calificacion(2L, 20L, "EST-002", LocalDate.of(2026, 2, 20), 4.0);
         when(repository.findAll()).thenReturn(List.of(entity1, entity2));
 
         // When
@@ -102,29 +104,24 @@ class CalificacionServiceTest {
         assertEquals(2, result.size());
 
         CalificacionDTO dto1 = result.get(0);
-        assertEquals(1L, dto1.getIdEvaluacion());
+        assertEquals(1L, dto1.getIdCalificacion());
+        assertEquals(10L, dto1.getIdEvaluacion());
         assertEquals("EST-001", dto1.getIdEstudiante());
-        assertEquals(LocalDate.of(2026, 1, 15), dto1.getFecha());
         assertEquals(6.5, dto1.getNota());
 
         CalificacionDTO dto2 = result.get(1);
-        assertEquals(2L, dto2.getIdEvaluacion());
-        assertEquals("EST-002", dto2.getIdEstudiante());
-        assertEquals(LocalDate.of(2026, 2, 20), dto2.getFecha());
-        assertEquals(4.0, dto2.getNota());
+        assertEquals(2L, dto2.getIdCalificacion());
+        assertEquals(20L, dto2.getIdEvaluacion());
 
         verify(repository).findAll();
     }
 
     @Test
     void getAll_whenNoRecords_returnsEmptyList() {
-        // Given
         when(repository.findAll()).thenReturn(Collections.emptyList());
 
-        // When
         List<CalificacionDTO> result = service.getAll();
 
-        // Then
         assertNotNull(result);
         assertTrue(result.isEmpty());
         verify(repository).findAll();
@@ -133,31 +130,27 @@ class CalificacionServiceTest {
     @Test
     void getById_whenFound_returnsMappedDto() {
         // Given
-        Calificacion entity = buildEntity(10L);
-        when(repository.findById(10L)).thenReturn(Optional.of(entity));
+        Calificacion entity = buildEntity(5L);
+        when(repository.findById(5L)).thenReturn(Optional.of(entity));
 
         // When
-        Optional<CalificacionDTO> result = service.getById(10L);
+        Optional<CalificacionDTO> result = service.getById(5L);
 
         // Then
         assertTrue(result.isPresent());
         CalificacionDTO dto = result.get();
+        assertEquals(5L, dto.getIdCalificacion());
         assertEquals(10L, dto.getIdEvaluacion());
         assertEquals("EST-001", dto.getIdEstudiante());
-        assertEquals(LocalDate.of(2026, 1, 15), dto.getFecha());
-        assertEquals(6.5, dto.getNota());
-        verify(repository).findById(10L);
+        verify(repository).findById(5L);
     }
 
     @Test
     void getById_whenNotFound_returnsEmptyOptional() {
-        // Given
         when(repository.findById(99L)).thenReturn(Optional.empty());
 
-        // When
         Optional<CalificacionDTO> result = service.getById(99L);
 
-        // Then
         assertTrue(result.isEmpty());
         assertFalse(result.isPresent());
         verify(repository).findById(99L);
@@ -165,9 +158,9 @@ class CalificacionServiceTest {
 
     @Test
     void guardar_savesEntityAndReturnsMappedDto() {
-        // Given: both cross-service existence checks return true
-        CalificacionDTO input = new CalificacionDTO(null, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
-        Calificacion persisted = new Calificacion(5L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
+        // Given: evaluación y estudiante existen
+        CalificacionDTO input = new CalificacionDTO(null, 10L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
+        Calificacion persisted = new Calificacion(5L, 10L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
         stubExistenceChecks(Boolean.TRUE, Boolean.TRUE);
         when(repository.save(any(Calificacion.class))).thenReturn(persisted);
 
@@ -176,26 +169,36 @@ class CalificacionServiceTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(5L, result.getIdEvaluacion());
+        assertEquals(5L, result.getIdCalificacion());
+        assertEquals(10L, result.getIdEvaluacion());
         assertEquals("EST-003", result.getIdEstudiante());
-        assertEquals(LocalDate.of(2026, 3, 10), result.getFecha());
         assertEquals(5.5, result.getNota());
 
-        // Verify the entity passed to the repository was mapped from the DTO
         ArgumentCaptor<Calificacion> captor = ArgumentCaptor.forClass(Calificacion.class);
         verify(repository).save(captor.capture());
         Calificacion saved = captor.getValue();
-        assertEquals(input.getIdEvaluacion(), saved.getIdEvaluacion());
+        assertEquals(10L, saved.getIdEvaluacion());
         assertEquals("EST-003", saved.getIdEstudiante());
-        assertEquals(LocalDate.of(2026, 3, 10), saved.getFecha());
-        assertEquals(5.5, saved.getNota());
     }
 
     @Test
-    void guardar_whenEstudianteDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
-        // Given: estudiante not found (the only cross-service reference checked)
-        CalificacionDTO input = new CalificacionDTO(7L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
-        stubExistenceChecks(Boolean.FALSE, Boolean.FALSE);
+    void guardar_whenEvaluacionDoesNotExist_throwsAndDoesNotSave() {
+        // Given: la evaluación NO existe (primer chequeo en false)
+        CalificacionDTO input = new CalificacionDTO(null, 99L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
+        stubExistenceChecks(Boolean.FALSE, Boolean.TRUE);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> service.guardar(input, "Bearer token"));
+        assertEquals("La evaluación con id 99 no existe", ex.getMessage());
+        verify(repository, never()).save(any(Calificacion.class));
+    }
+
+    @Test
+    void guardar_whenEstudianteDoesNotExist_throwsAndDoesNotSave() {
+        // Given: evaluación ok, estudiante NO existe
+        CalificacionDTO input = new CalificacionDTO(null, 10L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
+        stubExistenceChecks(Boolean.TRUE, Boolean.FALSE);
 
         // When / Then
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -206,13 +209,10 @@ class CalificacionServiceTest {
 
     @Test
     void borrar_callsDeleteById() {
-        // Given
         Long id = 7L;
 
-        // When
         service.borrar(id);
 
-        // Then
         verify(repository, times(1)).deleteById(id);
         verify(repository, never()).findById(any());
     }

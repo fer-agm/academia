@@ -11,14 +11,19 @@ import java.time.LocalDate;
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Representa una calificación (evaluación) de un estudiante")
+@Schema(description = "Representa la calificación de un estudiante en una evaluación")
 public class CalificacionDTO extends RepresentationModel<CalificacionDTO> {
+
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Schema(description = "Identificador único de la evaluación (generado por el sistema)", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
+    @Schema(description = "Identificador único de la calificación (generado por el sistema)", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
+    private Long idCalificacion;
+
+    @NotNull(message = "El ID de la evaluación es obligatorio")
+    @Schema(description = "Evaluación a la que pertenece esta calificación", example = "10")
     private Long idEvaluacion;
 
     @NotBlank(message = "El ID del estudiante es obligatorio")
-    @Schema(description = "Identificador del estudiante asociado a la calificación", example = "EST-1024")
+    @Schema(description = "Identificador del estudiante asociado a la calificación", example = "13828053-5")
     private String idEstudiante;
 
     @NotNull(message = "La fecha es obligatoria")

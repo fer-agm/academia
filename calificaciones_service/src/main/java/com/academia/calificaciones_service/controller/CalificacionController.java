@@ -52,7 +52,7 @@ public class CalificacionController {
         List<CalificacionDTO> dtos = calificacionService.getAll();
         
         // Aplicar HATEOAS obligatoriamente solo a métodos GET [cite: 29, 30]
-        dtos.forEach(dto -> dto.add(linkTo(methodOn(CalificacionController.class).getById(dto.getIdEvaluacion())).withSelfRel()));
+        dtos.forEach(dto -> dto.add(linkTo(methodOn(CalificacionController.class).getById(dto.getIdCalificacion())).withSelfRel()));
         
         return ResponseEntity.ok(dtos);
     }
@@ -103,7 +103,7 @@ public class CalificacionController {
         log.info("Petición entrante: Actualizar calificación ID {}", id);
         return calificacionService.getById(id)
                 .map(existing -> {
-                    calificacionDTO.setIdEvaluacion(id);
+                    calificacionDTO.setIdCalificacion(id);
                     return ResponseEntity.ok(calificacionService.guardar(calificacionDTO, authHeader));
                 })
                 .orElse(ResponseEntity.notFound().build());

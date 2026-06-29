@@ -59,8 +59,9 @@ class CalificacionControllerTest {
         RequestContextHolder.resetRequestAttributes();
     }
 
+    // CalificacionDTO(idCalificacion, idEvaluacion, idEstudiante, fecha, nota)
     private CalificacionDTO buildDto(Long id) {
-        return new CalificacionDTO(id, "EST-001", LocalDate.of(2026, 1, 15), 6.5);
+        return new CalificacionDTO(id, 10L, "EST-001", LocalDate.of(2026, 1, 15), 6.5);
     }
 
     @Test
@@ -110,6 +111,7 @@ class CalificacionControllerTest {
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+        assertEquals(10L, response.getBody().getIdCalificacion());
         assertEquals(10L, response.getBody().getIdEvaluacion());
         assertTrue(response.getBody().hasLink("lista-completa"));
         verify(calificacionService).getById(10L);
@@ -132,7 +134,7 @@ class CalificacionControllerTest {
     @Test
     void crear_returnsOkWithSavedDto() {
         // Given
-        CalificacionDTO input = new CalificacionDTO(null, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
+        CalificacionDTO input = new CalificacionDTO(null, 10L, "EST-003", LocalDate.of(2026, 3, 10), 5.5);
         CalificacionDTO saved = buildDto(5L);
         when(calificacionService.guardar(input, "Bearer token")).thenReturn(saved);
 
@@ -142,7 +144,7 @@ class CalificacionControllerTest {
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(5L, response.getBody().getIdEvaluacion());
+        assertEquals(5L, response.getBody().getIdCalificacion());
         verify(calificacionService).guardar(input, "Bearer token");
         verifyNoMoreInteractions(calificacionService);
     }
@@ -151,7 +153,7 @@ class CalificacionControllerTest {
     void actualizar_whenFound_returnsOkWithUpdatedDto() {
         // Given
         Long id = 10L;
-        CalificacionDTO input = new CalificacionDTO(null, "EST-009", LocalDate.of(2026, 4, 1), 7.0);
+        CalificacionDTO input = new CalificacionDTO(null, 10L, "EST-009", LocalDate.of(2026, 4, 1), 7.0);
         CalificacionDTO saved = buildDto(id);
         when(calificacionService.getById(id)).thenReturn(Optional.of(buildDto(id)));
         when(calificacionService.guardar(any(CalificacionDTO.class), any())).thenReturn(saved);
@@ -162,9 +164,9 @@ class CalificacionControllerTest {
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(id, response.getBody().getIdEvaluacion());
+        assertEquals(id, response.getBody().getIdCalificacion());
         // controller forces the path id onto the incoming dto before saving
-        assertEquals(id, input.getIdEvaluacion());
+        assertEquals(id, input.getIdCalificacion());
         verify(calificacionService).getById(id);
         verify(calificacionService).guardar(input, "Bearer token");
     }
@@ -173,7 +175,7 @@ class CalificacionControllerTest {
     void actualizar_whenNotFound_returns404AndDoesNotSave() {
         // Given
         Long id = 99L;
-        CalificacionDTO input = new CalificacionDTO(null, "EST-009", LocalDate.of(2026, 4, 1), 7.0);
+        CalificacionDTO input = new CalificacionDTO(null, 10L, "EST-009", LocalDate.of(2026, 4, 1), 7.0);
         when(calificacionService.getById(id)).thenReturn(Optional.empty());
 
         // When

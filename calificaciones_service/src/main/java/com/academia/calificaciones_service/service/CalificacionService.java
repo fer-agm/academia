@@ -14,9 +14,12 @@ import java.util.Optional;
 @Service
 public class CalificacionService {
 
-    private static final Logger log = LoggerFactory.getLogger(CalificacionService.class); // Log exigido
+    private static final Logger log = LoggerFactory.getLogger(CalificacionService.class);
     private final CalificacionRepository repository;
     private final WebClient webClient;
+
+    @Value("${api.evaluacion.exists}")
+    private String evaluacionExistsUrl;
 
     @Value("${api.usuario.exists}")
     private String usuarioExistsUrl;
@@ -37,9 +40,10 @@ public class CalificacionService {
     }
 
     public CalificacionDTO guardar(CalificacionDTO dto, String authHeader) {
-        log.info("Guardando calificación para estudiante: {}", dto.getIdEstudiante());
-        // idEvaluacion es la PK autogenerada de la calificación (no una referencia a una
-        // evaluación), por lo que aquí solo se valida la referencia real: el estudiante.
+        log.info("Guardando calificación de la evaluación {} para el estudiante {}", dto.getIdEvaluacion(), dto.getIdEstudiante());
+        // Las referencias deben existir (validación cross-service, reenviando el token):
+        verificarExiste(evaluacionExistsUrl, dto.getIdEvaluacion(), authHeader,
+                "La evaluación con id " + dto.getIdEvaluacion() + " no existe");
         verificarExiste(usuarioExistsUrl, dto.getIdEstudiante(), authHeader,
                 "El estudiante con RUN " + dto.getIdEstudiante() + " no existe");
         Calificacion entidad = convertToEntity(dto);
@@ -59,11 +63,11 @@ public class CalificacionService {
         repository.deleteById(id);
     }
 
-    private CalificacionDTO convertToDTO(Calificacion entity) {
-        return new CalificacionDTO(entity.getIdEvaluacion(), entity.getIdEstudiante(), entity.getFecha(), entity.getNota());
+    private CalificacionDTO convertToDTO(Calificacion e) {
+        return new CalificacionDTO(e.getIdCalificacion(), e.getIdEvaluacion(), e.getIdEstudiante(), e.getFecha(), e.getNota());
     }
 
     private Calificacion convertToEntity(CalificacionDTO dto) {
-        return new Calificacion(dto.getIdEvaluacion(), dto.getIdEstudiante(), dto.getFecha(), dto.getNota());
+        return new Calificacion(dto.getIdCalificacion(), dto.getIdEvaluacion(), dto.getIdEstudiante(), dto.getFecha(), dto.getNota());
     }
 }
