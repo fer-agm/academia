@@ -10,8 +10,8 @@ Cada microservicio tiene controller, que controla peticiones, service, que manej
 
 Además dde los microservicios, tenemos el api-gateway, que es la entrada para todos estos. Valida el jwt, rutea por prefijo de ruta y agrega documentación swagger a todos los ms.
 
-Con mysql tenemos la base de datos compartida. Las credenciales de acceso están en auth-service, y los perfiles en ususarios, todo relacionado con primary key run.
-La comunicación entre servicios fue mediante webclient, por ejemplo, el pago-service valida la existencia del curso, y user-service provee las credenciales en auth.service.
+Con mysql tenemos la base de datos compartida. Los usuarios se crean únicamente en user-service (tabla usuarios); auth-service valida las credenciales leyendo esa misma tabla y entrega el token, así que no hay registro aparte ni una tabla de credenciales duplicada.
+La comunicación entre servicios es mediante webclient. Por ejemplo, el pago-service valida que el curso exista, y varios servicios validan sus referencias (curso, estudiante, evaluación) llamando a endpoints /existe de otros servicios y reenviando el token. Si se referencia un id que no existe, se rechaza con un 400 y un mensaje claro.
 
 
 Servicio        -       puerto      -         responsabilidad
@@ -22,7 +22,7 @@ clases-service  -       8083        - cursos, clases y categorías.
 evaluaciones-service    8084        - evaluaciones, preguntas, alternativas.
 inscripciones-service   8085        - inscripciones y cupos.
 user-service    -       8086        - usuarios y roles.
-auth-service    -       8087        - login, registro y token de jwt.
+auth-service    -       8087        - login y token jwt (valida contra la tabla usuarios, sin registro propio).
 certificado-service     8088        - certificados.
 calificaciones-service  8089        - calificaciones y promedios.
 mysql           -       3307 3306   - base de datos.
@@ -54,6 +54,9 @@ autenticación
 usando post  /api/auth/login con {'run':'xxxxxxxx-x','clave':'clave'} te devuelve un token jwt que dura 8 horas.
 usando el authorization: Bearer token, el gateway valida el token y puedes ver los otros microservicios.
 
+rutas públicas (sin token): post /api/auth/login y post /api/usuarios/crear (registro de un usuario).
+todo el resto de /api/** requiere el header authorization: Bearer token. si el token falta, es inválido o expiró, el gateway responde 401 con un mensaje claro (ej. "Token no válido").
+
 
 
 ejecutar con docker
@@ -72,6 +75,24 @@ para ejecutar se tiene que hacer
     ./mvnw test
 
 
+despliegue remoto (aws academy / ec2)
+plataforma: aws ec2, dentro del laboratorio de aws academy.
+- instancia ec2 con amazon linux 2023, tipo t3.large (~8gb ram, porque son 8 microservicios + gateway + mysql).
+- security group con los puertos abiertos: 22 (ssh) y 8080 (http, para llegar a la api y a swagger).
+- variables de entorno: las mismas del docker-compose.yml (SECRET / JWT_SECRET y la conexión a mysql); se aplican igual que en local.
+
+proceso de despliegue (dentro de la instancia):
+    sudo dnf install -y docker git
+    sudo systemctl enable --now docker
+    git clone https://github.com/fer-agm/academia.git
+    cd academia
+    sudo docker compose up --build -d
+
+acceso: http://<IP-PUBLICA-EC2>:8080/swagger-ui.html
+   (reemplazar <IP-PUBLICA-EC2> por la IP pública que muestra la instancia ec2)
+
+nota: el laboratorio de aws academy se detiene tras unas horas; al reiniciarlo la IP pública cambia,
+así que hay que volver a copiarla. conviene levantar la instancia ~15 min antes de la evaluación.
 
 Java 21 - spring boot - spring cloud gateway - spring data jpa - mysql - springdoc.openapi (swagger) - jwt - junit - mockito - docker/docker compose
 
