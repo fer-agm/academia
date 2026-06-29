@@ -11,6 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByUsuario(String usuario);
+
     //ocupamos optional para evitar nullpointerexception, ya que el 
     // findbyid puede no encontrar un usuario con ese id, entonces 
     // devuelve un optional vacio, y con el orElse(null) en el service, 

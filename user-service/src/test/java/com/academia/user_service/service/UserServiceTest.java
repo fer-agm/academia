@@ -156,6 +156,22 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("guardarUsuario: throws when the usuario (username) already exists")
+    void guardarUsuario_throwsWhenUsuarioExists() {
+        // Given: run y email libres, pero el nombre de usuario ya existe
+        User user = buildUser();
+        when(userRepository.findByRun("11111111-1")).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("aperez@banca.me")).thenReturn(Optional.empty());
+        when(userRepository.findByUsuario("aperez")).thenReturn(Optional.of(buildUser()));
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.guardarUsuario(user));
+        assertEquals("Ya existe un usuario con el nombre de usuario aperez", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("listarTodo: returns all users from the repository")
     void listarTodo_returnsAllUsers() {
         // Given
@@ -280,6 +296,29 @@ class UserServiceTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> userService.actualizarUsuario(1L, nuevosDatos));
         assertEquals("Ya existe un usuario con el email otro@banca.me", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("actualizarUsuario: throws when the new usuario belongs to another user")
+    void actualizarUsuario_throwsWhenUsuarioExists() {
+        // Given: el email no cambia (se salta ese chequeo), pero el nuevo usuario ya lo tiene otro
+        User existing = buildUser();
+        User nuevosDatos = new User();
+        nuevosDatos.setNombre("Beatriz");
+        nuevosDatos.setApellido("Soto");
+        nuevosDatos.setUsuario("bsoto");
+        nuevosDatos.setClave("newpass");
+        nuevosDatos.setEmail("aperez@banca.me");   // mismo email que el existente
+        nuevosDatos.setIdRol(1L);
+        when(rolRepository.existsById(any())).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.findByUsuario("bsoto")).thenReturn(Optional.of(buildUser()));
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.actualizarUsuario(1L, nuevosDatos));
+        assertEquals("Ya existe un usuario con el nombre de usuario bsoto", ex.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
 

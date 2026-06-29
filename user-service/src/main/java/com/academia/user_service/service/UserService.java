@@ -28,6 +28,10 @@ public class UserService {
         if (user.getEmail() != null && userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un usuario con el email " + user.getEmail());
         }
+        if (user.getUsuario() != null && !user.getUsuario().isBlank()
+                && userRepository.findByUsuario(user.getUsuario()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un usuario con el nombre de usuario " + user.getUsuario());
+        }
         if (user.getIdRol() == null || !rolRepository.existsById(user.getIdRol())) {
             throw new IllegalArgumentException("El rol con id " + user.getIdRol() + " no existe");
         }
@@ -74,6 +78,12 @@ public class UserService {
                     && !nuevosDatos.getEmail().equals(user.getEmail())
                     && userRepository.findByEmail(nuevosDatos.getEmail()).isPresent()) {
                 throw new IllegalArgumentException("Ya existe un usuario con el email " + nuevosDatos.getEmail());
+            }
+            // El nombre de usuario también es único: si cambió y ya lo usa OTRO usuario, se rechaza.
+            if (nuevosDatos.getUsuario() != null && !nuevosDatos.getUsuario().isBlank()
+                    && !nuevosDatos.getUsuario().equals(user.getUsuario())
+                    && userRepository.findByUsuario(nuevosDatos.getUsuario()).isPresent()) {
+                throw new IllegalArgumentException("Ya existe un usuario con el nombre de usuario " + nuevosDatos.getUsuario());
             }
             user.setNombre(nuevosDatos.getNombre());
             user.setApellido(nuevosDatos.getApellido());
