@@ -62,3 +62,4 @@ public class User {
     @Schema(description = "Identificador del rol del usuario", example = "1")
     private Long idRol;
 }
+
