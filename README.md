@@ -79,6 +79,7 @@ despliegue remoto (aws academy / ec2)
 plataforma: aws ec2, dentro del laboratorio de aws academy.
 - instancia ec2 con amazon linux 2023, tipo t3.large (~8gb ram, porque son 8 microservicios + gateway + mysql).
 - security group con los puertos abiertos: 22 (ssh) y 8080 (http, para llegar a la api y a swagger).
+- Elastic IP (IP pública fija) asociada a la instancia, para que la URL no cambie entre reinicios.
 - variables de entorno: las mismas del docker-compose.yml (SECRET / JWT_SECRET y la conexión a mysql); se aplican igual que en local.
 
 proceso de despliegue (dentro de la instancia):
@@ -88,11 +89,10 @@ proceso de despliegue (dentro de la instancia):
     cd academia
     sudo docker compose up --build -d
 
-acceso: http://<IP-PUBLICA-EC2>:8080/swagger-ui.html
-   (reemplazar <IP-PUBLICA-EC2> por la IP pública que muestra la instancia ec2)
+acceso (IP elástica fija): http://3.220.67.111:8080/swagger-ui.html
 
-nota: el laboratorio de aws academy se detiene tras unas horas; al reiniciarlo la IP pública cambia,
-así que hay que volver a copiarla. conviene levantar la instancia ~15 min antes de la evaluación.
+nota: el laboratorio de aws academy se detiene tras unas horas; basta con volver a iniciar la instancia ec2
+(la Elastic IP se mantiene, así que la URL NO cambia). conviene levantarla ~15 min antes de la evaluación.
 
 Java 21 - spring boot - spring cloud gateway - spring data jpa - mysql - springdoc.openapi (swagger) - jwt - junit - mockito - docker/docker compose
 
