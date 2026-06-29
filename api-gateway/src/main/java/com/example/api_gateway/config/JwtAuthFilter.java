@@ -1,11 +1,15 @@
 package com.example.api_gateway.config;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.server.ServerWebExchange;
@@ -13,6 +17,7 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -27,7 +32,7 @@ public class JwtAuthFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
 
-        // Rutas públicas — dejar pasar sin token (login y registro/creación de usuario)
+        // Rutas públicas — dejar pasar sin token (login y creación de usuario)
         if (path.startsWith("/api/auth/") ||
             path.equals("/api/usuarios/crear") ||
             path.startsWith("/swagger-ui") ||
@@ -39,11 +44,10 @@ public class JwtAuthFilter implements WebFilter {
 
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
+            return unauthorized(exchange, "Falta el token. Agrega el header 'Authorization: Bearer <token>'.");
         }
 
-        String token = authHeader.substring(7);
+        String token = authHeader.substring(7).trim();
         try {
             Key key = Keys.hmacShaKeyFor(secret.getBytes());
             Claims claims = Jwts.parserBuilder()
@@ -58,9 +62,21 @@ public class JwtAuthFilter implements WebFilter {
             return chain.filter(exchange)
                 .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 
-        } catch (JwtException e) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
+        } catch (ExpiredJwtException e) {
+            return unauthorized(exchange, "Token expirado. Inicia sesión nuevamente.");
+        } catch (JwtException | IllegalArgumentException e) {
+            // firma incorrecta, token mal formado, vacío, etc.
+            return unauthorized(exchange, "Token no válido.");
         }
+    }
+
+    /** Responde 401 con un cuerpo JSON claro en vez de un 401 vacío. */
+    private Mono<Void> unauthorized(ServerWebExchange exchange, String mensaje) {
+        ServerHttpResponse response = exchange.getResponse();
+        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = "{\"status\":401,\"error\":\"" + mensaje + "\"}";
+        DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
+        return response.writeWith(Mono.just(buffer));
     }
 }
