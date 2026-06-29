@@ -12,7 +12,7 @@ Además dde los microservicios, tenemos el api-gateway, que es la entrada para t
 
 Con mysql tenemos la base de datos compartida. 
 
-Los usuarios se crean únicamente en user-service (tabla usuarios); auth-service valida las credenciales leyendo esa misma tabla y entrega el token, así que no hay registro aparte ni una tabla de credenciales duplicada, por lo que api/auth/login y api/usuarios/crear est+an abiertos siempre, mientras que todos los demás necesitan autenticación. Se hace hincapié a que sólo se registran en la api de usuarios porque para simplificar el proceso de autenticado, se podía registrar usuarios nuevos sólo con run y clave en la api de auth, pero por motivos evidentes eso no funciona, así que esa tabla quedó obsoleta y la autenticación se conecta directa y únicamente a la tabla usuarios.
+los usuarios se crean únicamente en user-service (tabla usuarios) y auth-service valida las credenciales leyendo esa misma tabla; no hay registro aparte.
 
 La comunicación entre servicios es mediante webclient. Por ejemplo, el pago-service valida que el curso exista, y varios servicios validan sus referencias (curso, estudiante, evaluación) llamando a endpoints /existe de otros servicios y reenviando el token. Si se referencia un id que no existe, se rechaza con un 400 y un mensaje que explique qué pasó.
 
@@ -33,18 +33,18 @@ mysql           -       3307 3306   - base de datos.
 
 
 rutas (vía 8080)
-prefijo                                         -       destino
-/api/auth                                       -       auth-service público
-/api/usuarios/**      /api/roles/**             -       user-service 
-/api/pagos/**         /api/transacciones        -       pago-service
+prefijo                                         -       destino                                                
+/api/auth                                       -       auth-service público                                     
+/api/usuarios/**      /api/roles/**             -       user-service                                          
+/api/pagos/**         /api/transacciones        -       pago-service                                           
 
-/api/cursos/**        /api/categorias/**  /api/clases/**          -       clases-service 
-/api/evaluaciones/**  /api/preguntas/**   /api/alternativas/**    -       evaluaciones-service 
-
-/api/inscripciones    /api/cupos/**             -       inscripciones-service
-/api/calificaciones   /api/promedios/**         -       calificaciones-service
-/api/certificados                               -       certificado-service 
-/v3/api-docs/{servicio}                         -       documentación openAPI de cada servicio.
+/api/cursos/**        /api/categorias/**  /api/clases/**          -       clases-service                         
+/api/evaluaciones/**  /api/preguntas/**   /api/alternativas/**    -       evaluaciones-service                   
+ 
+/api/inscripciones    /api/cupos/**             -       inscripciones-service                                    
+/api/calificaciones   /api/promedios/**         -       calificaciones-service                               
+/api/certificados                               -       certificado-service                                   
+/v3/api-docs/{servicio}                         -       documentación openAPI de cada servicio.                    
 
 
 
@@ -58,9 +58,7 @@ usando post  /api/auth/login con {'run':'xxxxxxxx-x','clave':'clave'} te devuelv
 usando el authorization: Bearer token, el gateway valida el token y puedes ver los otros microservicios.
 
 rutas públicas (sin token): post /api/auth/login y post /api/usuarios/crear (registro de un usuario).
-todo el resto de /api/** requiere el header authorization: Bearer token. si el token falta, es inválido o expiró, el gateway responde 401 con un mensaje claro (ej. "Token no válido").
-
-
+todo el resto de /api/** requiere el header authorization: Bearer token. si el token falta, es inválido o expiró, el gateway responde 401 con un mensaje claro (ej. "Token no válido"). 
 
 ejecutar con docker
     docker compose up --build
@@ -68,34 +66,19 @@ ejecutar con docker
     docker compose logs -f auth-service
     docker compose down
 
-se abre http://localhost:8080/swagger-ui.html
+se abre http://localhost:8080/swagger-ui.html (LOCALMENTE)
 
 
 
-se puede hacer pruebas unitarias con mockito
-para ejecutar se tiene que hacer
-    cd pago-service
-    ./mvnw test
+
 
 
 despliegue remoto (aws academy / ec2)
-plataforma: aws ec2, dentro del laboratorio de aws academy.
-instancia ec2 con amazon linux 2023, tipo t3.large.
-security grpup con puertos abiertos: 22(ssh) y 8080 (hhtp).
-Elastic ip asociada a al instancia.
+desplegado en aws ec2 (amazon linux 2023) con ip elástica fija.
+acceso: http://3.220.67.111:8080/swagger-ui.html
 
 
-proceso de despliegue (dentro de la instancia):
-    sudo dnf install -y docker git
-    sudo systemctl enable --now docker
-    git clone https://github.com/fer-agm/academia.git
-    cd academia
-    sudo docker compose up --build -d
-
-acceso (IP elástica fija): http://3.220.67.111:8080/swagger-ui.html desde aws de Fernanda.
-
-
-Java 21 - spring boot - spring cloud gateway - spring data jpa - mysql - springdoc.openapi (swagger) - jwt - junit - mockito - docker/docker compose - aws academy
+Java 21 - spring boot - spring cloud gateway - spring data jpa - mysql - springdoc.openapi (swagger) - jwt - junit - mockito - docker/docker compose - aws academy - ec2 - elastic ip
 
 
 link repositorio: 
