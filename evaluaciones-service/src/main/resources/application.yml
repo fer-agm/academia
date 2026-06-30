@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: evaluaciones-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  liquibase:
+    enabled: false
+  sql:
+    init:
+      mode: always
+  data:
+    rest:
+      detection-strategy: annotated
+
+server:
+  port: 8084
+
+SECRET: esta_es_mi_compleja_clave_secreta_para_jwt_2026_academia_noafer
+
+# Validación cross-service: existencia del curso vía api-gateway (clases-service)
+api:
+  curso:
+    exists: "http://api-gateway:8080/api/cursos/%d/existe"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

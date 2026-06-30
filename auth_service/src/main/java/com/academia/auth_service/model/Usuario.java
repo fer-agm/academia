@@ -1,7 +1,6 @@
 package com.academia.auth_service.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 // Lee la tabla 'usuarios' (única fuente de verdad, administrada por user-service).
-// auth-service solo valida credenciales y emite el token; no crea ni modifica usuarios.
+// auth-service solo valida credenciales y emite el token, no crea ni modifica usuarios.
 @Entity
 @Table(name = "usuarios")
 @Data
