@@ -9,10 +9,10 @@ import lombok.Data;
 public class AuthRequest {
 
     @NotBlank
-    @Schema(description = "RUN del usuario (identificador único)", example = "11111111-1")
+    @Schema(description = "RUN del usuario (identificador único)", example = "10492048-9")
     private String run;
 
     @NotBlank
-    @Schema(description = "Contraseña del usuario", example = "secreta123")
+    @Schema(description = "Contraseña del usuario", example = "clave")
     private String clave;
 }

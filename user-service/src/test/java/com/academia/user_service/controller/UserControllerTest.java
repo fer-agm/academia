@@ -176,6 +176,21 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("existePorRun: returns 200 with the boolean from the service")
+    void existePorRun_returnsBoolean() {
+        // Given
+        when(userService.existePorRun("11111111-1")).thenReturn(true);
+
+        // When
+        ResponseEntity<Boolean> response = userController.existePorRun("11111111-1");
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(Boolean.TRUE, response.getBody());
+        verify(userService, times(1)).existePorRun("11111111-1");
+    }
+
+    @Test
     @DisplayName("eliminar: returns 200 with confirmation message when the user exists")
     void eliminar_success() {
         // Given

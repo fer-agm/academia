@@ -230,6 +230,20 @@ class PagoServiceTest {
     }
 
     @Test
+    @DisplayName("guardar: curso ok pero validación del estudiante devuelve null -> lanza BadRequestException y no guarda")
+    void guardar_estudianteNull_lanzaBadRequest() {
+        // Given: curso existe (true), pero la validación del estudiante no se pudo resolver (null)
+        Pago pago = nuevoPago(100000, 0);
+        stubCursoYEstudiante(Boolean.TRUE, null);
+
+        // When / Then
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> pagoService.guardar(pago, "Bearer token"));
+        assertEquals("No se pudo validar el estudiante con RUN " + pago.getRunEstudiante(), ex.getMessage());
+        verify(pagoRepository, never()).save(any(Pago.class));
+    }
+
+    @Test
     @DisplayName("guardar: medioPago en blanco -> lanza IllegalArgumentException sin llamar al gateway")
     void guardar_medioPagoBlank_lanzaIllegalArgument() {
         // Given

@@ -247,6 +247,63 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("existePorRun: returns true when the RUN exists")
+    void existePorRun_returnsTrueWhenFound() {
+        // Given
+        when(userRepository.findByRun("11111111-1")).thenReturn(Optional.of(buildUser()));
+
+        // When
+        boolean result = userService.existePorRun("11111111-1");
+
+        // Then
+        assertTrue(result);
+        verify(userRepository, times(1)).findByRun("11111111-1");
+    }
+
+    @Test
+    @DisplayName("existePorRun: returns false when the RUN does not exist")
+    void existePorRun_returnsFalseWhenNotFound() {
+        // Given
+        when(userRepository.findByRun("00000000-0")).thenReturn(Optional.empty());
+
+        // When
+        boolean result = userService.existePorRun("00000000-0");
+
+        // Then
+        assertFalse(result);
+        verify(userRepository, times(1)).findByRun("00000000-0");
+    }
+
+    @Test
+    @DisplayName("actualizarUsuario: throws when the idRol does not exist")
+    void actualizarUsuario_throwsWhenRolDoesNotExist() {
+        // Given: el rol indicado no existe -> debe rechazar antes de tocar el repositorio de usuarios
+        User nuevosDatos = buildUser();
+        nuevosDatos.setIdRol(999L);
+        when(rolRepository.existsById(999L)).thenReturn(false);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.actualizarUsuario(1L, nuevosDatos));
+        assertEquals("El rol con id 999 no existe", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("actualizarUsuario: throws when the idRol is null")
+    void actualizarUsuario_throwsWhenRolIsNull() {
+        // Given: idRol nulo -> rama izquierda del OR (no se consulta rolRepository)
+        User nuevosDatos = buildUser();
+        nuevosDatos.setIdRol(null);
+
+        // When / Then
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> userService.actualizarUsuario(1L, nuevosDatos));
+        assertEquals("El rol con id null no existe", ex.getMessage());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     @DisplayName("actualizarUsuario: updates fields and saves when the user exists")
     void actualizarUsuario_found() {
         // Given
