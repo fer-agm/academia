@@ -9,6 +9,8 @@ server:
 # 8087 auth
 # 8088 certificados
 # 8089 calificaciones
+# 8090 notificaciones
+
 spring:
   main:
     web-application-type: reactive
@@ -81,6 +83,15 @@ spring:
               filters:
                 - RewritePath=/v3/api-docs/inscripciones, /v3/api-docs
 
+            - id: notificaciones-service
+              uri: http://notificaciones-service:8090
+              predicates:
+                - Path=/api/notificaciones/**, /v3/api-docs/notificaciones/**, /v3/api-docs/notificaciones
+              filters:
+                - RewritePath=/v3/api-docs/notificaciones, /v3/api-docs
+
+
+
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -104,6 +115,9 @@ springdoc:
   swagger-ui.urls[6].url: /v3/api-docs/evaluaciones
   swagger-ui.urls[7].name: 8. Inscripciones
   swagger-ui.urls[7].url: /v3/api-docs/inscripciones
+  swagger-ui.urls[8].name: 9. Notificaciones
+  swagger-ui.urls[8].url: /v3/api-docs/notificaciones
+
 
 
 jwt:

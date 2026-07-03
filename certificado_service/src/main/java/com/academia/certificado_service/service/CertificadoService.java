@@ -22,6 +22,8 @@ public class CertificadoService {
     @Value("${api.usuario.exists}")
     private String usuarioExistsUrl;
 
+ 
+
     public CertificadoService(CertificadoRepository repository, WebClient webClient) {
         this.repository = repository;
         this.webClient = webClient;

@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: notifiaciones-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  liquibase:
+    enabled: false
+  sql:
+    init:
+      mode: always
+  # Oculta los endpoints auto-expuestos de Spring Data REST (usamos los controllers /api)
+  data:
+    rest:
+      detection-strategy: annotated
+
+server:
+  port: 8090
+
+SECRET: esta_es_mi_compleja_clave_secreta_para_jwt_2026_academia_noafer
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+
+# Validaciones de existencia cross-service (vía api-gateway)
+api:
+  usuario:
+    exists: "http://api-gateway:8080/api/usuarios/run/%s/existe"
+  certificado:
+    exists: "http://api-gateway:8080/api/certificado/%d/existe"

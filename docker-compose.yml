@@ -35,6 +35,7 @@ services:
       - inscripciones-service
       - pago-service
       - user-service
+      - notificaciones-service
 
 
 
@@ -117,3 +118,13 @@ services:
     depends_on:
       mysql:
         condition: service_healthy      
+
+  notificaciones-service:
+    build: ./notificaciones-service
+    ports:
+      - "8090:8090"
+    environment:
+      <<: *common-env      
+    depends_on:
+      mysql:
+        condition: service_healthy     
