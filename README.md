@@ -29,6 +29,8 @@ auth-service    -       8087        - login y token jwt (valida contra la tabla 
 certificado-service     8088        - certificados.                                                              
 calificaciones-service  8089        - calificaciones y promedios.
 notificaciones-service  8090        - notificaciones de certificado.
+mensajeria-service      8091        - mensajes entre usuarios.
+
 
 mysql           -       3307 3306   - base de datos.
 
@@ -47,6 +49,7 @@ prefijo                                         -       destino
 /api/calificaciones   /api/promedios/**         -       calificaciones-service                               
 /api/certificados                               -       certificado-service          
 /api/notificaciones                             -       notificaciones-service                                   
+/api/mensajes                                   -       mensajeria-service                                   
 
 /v3/api-docs/{servicio}                         -       documentación openAPI de cada servicio.                    
 

@@ -10,6 +10,8 @@ server:
 # 8088 certificados
 # 8089 calificaciones
 # 8090 notificaciones
+# 8091 mensajeria
+
 
 spring:
   main:
@@ -90,6 +92,14 @@ spring:
               filters:
                 - RewritePath=/v3/api-docs/notificaciones, /v3/api-docs
 
+            - id: mensajeria-service
+              uri: http://mensajeria-service:8091
+              predicates:
+                - Path=/api/mensajeria/**, /v3/api-docs/mensajeria/**, /v3/api-docs/mensajeria
+              filters:
+                - RewritePath=/v3/api-docs/mensajeria, /v3/api-docs
+
+
 
 
 springdoc:
@@ -99,24 +109,26 @@ springdoc:
     path: /swagger-ui.html
     use-root-path: true
     persist-authorization: true
-  swagger-ui.urls[0].name: 1. Autenticación (Auth)
+  swagger-ui.urls[0].name: 01. Autenticación (Auth)
   swagger-ui.urls[0].url: /v3/api-docs/auth
-  swagger-ui.urls[1].name: 2. Calificaciones
+  swagger-ui.urls[1].name: 02. Calificaciones
   swagger-ui.urls[1].url: /v3/api-docs/calificaciones
-  swagger-ui.urls[2].name: 3. Certificados
+  swagger-ui.urls[2].name: 03. Certificados
   swagger-ui.urls[2].url: /v3/api-docs/certificados
-  swagger-ui.urls[3].name: 4. Usuarios
+  swagger-ui.urls[3].name: 04. Usuarios
   swagger-ui.urls[3].url: /v3/api-docs/usuarios
-  swagger-ui.urls[4].name: 5. Pagos
+  swagger-ui.urls[4].name: 05. Pagos
   swagger-ui.urls[4].url: /v3/api-docs/pagos
-  swagger-ui.urls[5].name: 6. Clases y Cursos
+  swagger-ui.urls[5].name: 06. Clases y Cursos
   swagger-ui.urls[5].url: /v3/api-docs/clases
-  swagger-ui.urls[6].name: 7. Evaluaciones
+  swagger-ui.urls[6].name: 07. Evaluaciones
   swagger-ui.urls[6].url: /v3/api-docs/evaluaciones
-  swagger-ui.urls[7].name: 8. Inscripciones
+  swagger-ui.urls[7].name: 08. Inscripciones
   swagger-ui.urls[7].url: /v3/api-docs/inscripciones
-  swagger-ui.urls[8].name: 9. Notificaciones
+  swagger-ui.urls[8].name: 09. Notificaciones
   swagger-ui.urls[8].url: /v3/api-docs/notificaciones
+  swagger-ui.urls[9].name: 10. Mensajeria
+  swagger-ui.urls[9].url: /v3/api-docs/mensajeria
 
 
 
