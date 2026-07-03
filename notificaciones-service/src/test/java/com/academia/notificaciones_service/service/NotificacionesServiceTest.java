@@ -190,21 +190,21 @@ class NotificacionesServiceTest {
     }
 
     @Test
-    void guardar_whenCursoDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
-        // Given: first check (curso) returns false
+    void guardar_whenCertificadoDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
+        // Given: first check (certificado) returns false
         NotificacionesDTO input = new NotificacionesDTO(null, "EST-003", 300L);
         stubExistenceChecks(Boolean.FALSE, Boolean.TRUE);
 
         // When / Then
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> service.guardar(input, "Bearer token"));
-        assertEquals("El curso con id 300 no existe", ex.getMessage());
+        assertEquals("El certificado con id 300 no existe", ex.getMessage());
         verify(repository, never()).save(any(Notificaciones.class));
     }
 
     @Test
     void guardar_whenEstudianteDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
-        // Given: curso ok (true), estudiante not found (false)
+        // Given: certificado ok (true), estudiante not found (false)
         NotificacionesDTO input = new NotificacionesDTO(null, "EST-003", 300L);
         stubExistenceChecks(Boolean.TRUE, Boolean.FALSE);
 
