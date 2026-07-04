@@ -69,7 +69,7 @@ class NotificacionesServiceTest {
     }
 
     /**
-     * Stubs the WebClient fluent chain. guardar() validates curso first, then estudiante;
+     * Stubs the WebClient fluent chain. guardar() validates certificado first, then estudiante;
      * successive block() invocations return the provided answers in that order.
      */
     @SuppressWarnings("unchecked")

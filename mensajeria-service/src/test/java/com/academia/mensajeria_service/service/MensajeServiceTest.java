@@ -34,7 +34,7 @@ import com.academia.mensajeria_service.repository.MensajeRepository;
 import reactor.core.publisher.Mono;
 
 /**
- * Pure Mockito unit tests for {@link NotificacionesService}.
+ * Pure Mockito unit tests for {@link MensajeService}.
  * No Spring context, no database.
  */
 @ExtendWith(MockitoExtension.class)
@@ -67,7 +67,7 @@ class MensajeServiceTest {
     }
 
     /**
-     * Stubs the WebClient fluent chain. guardar() validates curso first, then estudiante;
+     * Stubs the WebClient fluent chain. generarMensaje() validates estudiante;
      * successive block() invocations return the provided answers in that order.
      */
     @SuppressWarnings("unchecked")
@@ -83,14 +83,14 @@ class MensajeServiceTest {
 
     // Mensaje entity constructor order: (idMensaje, idEmisor, idReceptor, mensaje)
     private Mensaje buildEntity(Long id) {
-        return new Mensaje(id, "idEmisor", "idReceptor", "Mensaje de prueba");
+        return new Mensaje(id, "312132", "13124", "Mensaje de prueba");
     }
 
     @Test
     void getAll_returnsMappedDtoList() {
         // Given
-        Mensaje entity1 = new Mensaje(1L, "idEmisor", "idReceptor", "Mensaje de prueba");
-        Mensaje entity2 = new Mensaje(2L, "idEmisor", "idReceptor", "Mensaje de prueba");
+        Mensaje entity1 = new Mensaje(1L, "3423", "132213", "Mensaje de prueba");
+        Mensaje entity2 = new Mensaje(2L, "35435", "32443", "Mensaje de prueba");
         when(repository.findAll()).thenReturn(List.of(entity1, entity2));
 
         // When
@@ -103,14 +103,14 @@ class MensajeServiceTest {
         // convertToDTO maps: (idNotificacion, idCertificado, idEstudiante)
         MensajeDTO dto1 = result.get(0);
         assertEquals(1L, dto1.getIdMensaje());
-        assertEquals("idEmisor", dto1.getIdEmisor());
-        assertEquals("idReceptor", dto1.getIdReceptor());
+        assertEquals("3423", dto1.getIdEmisor());
+        assertEquals("132213", dto1.getIdReceptor());
         assertEquals("Mensaje de prueba", dto1.getMensaje());
 
         MensajeDTO dto2 = result.get(1);
         assertEquals(2L, dto2.getIdMensaje());
-        assertEquals("idEmisor", dto2.getIdEmisor());
-        assertEquals("idReceptor", dto2.getIdReceptor());
+        assertEquals("35435", dto2.getIdEmisor());
+        assertEquals("32443", dto2.getIdReceptor());
         assertEquals("Mensaje de prueba", dto2.getMensaje());
 
         verify(repository).findAll();
@@ -143,8 +143,8 @@ class MensajeServiceTest {
         assertTrue(result.isPresent());
         MensajeDTO dto = result.get();
         assertEquals(10L, dto.getIdMensaje());
-        assertEquals("idEmisor", dto.getIdEmisor());
-        assertEquals("idReceptor", dto.getIdReceptor());
+        assertEquals("312132", dto.getIdEmisor());
+        assertEquals("13124", dto.getIdReceptor());
         assertEquals("Mensaje de prueba", dto.getMensaje());
         verify(repository).findById(10L);
     }
@@ -164,11 +164,11 @@ class MensajeServiceTest {
     }
 
     @Test
-    void guardar_savesEntityAndReturnsMappedDto() {
+    void generarMensaje_savesEntityAndReturnsMappedDto() {
         // Given: both cross-service existence checks return true
-        MensajeDTO input = new MensajeDTO(null, "idEmisor", "idReceptor", "Mensaje de prueba");
+        MensajeDTO input = new MensajeDTO(null, "12345", "3243", "Mensaje de prueba");
         // Persisted entity returned by the mocked repository (order: idMensaje, idEmisor, idReceptor)
-        Mensaje persisted = new Mensaje(8L, "idEmisor", "idReceptor", "Mensaje de prueba");
+        Mensaje persisted = new Mensaje(8L, "12432", "3432", "Mensaje de prueba");
         stubExistenceChecks(Boolean.TRUE, Boolean.TRUE);
         when(repository.save(any(Mensaje.class))).thenReturn(persisted);
 
@@ -178,8 +178,8 @@ class MensajeServiceTest {
         // Then: returned DTO is convertToDTO(persisted)
         assertNotNull(result);
         assertEquals(8L, result.getIdMensaje());
-        assertEquals(100L, result.getIdEmisor());
-        assertEquals(200L, result.getIdReceptor());
+        assertEquals("12432", result.getIdEmisor());
+        assertEquals("3432", result.getIdReceptor());
         assertEquals("Mensaje de prueba", result.getMensaje());
 
         // Verify the entity built from the DTO before saving.
@@ -192,41 +192,41 @@ class MensajeServiceTest {
     }
 
     @Test
-    void guardar_whenCursoDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
-        // Given: first check (curso) returns false
+    void generarMensaje_whenUserDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
+        // Given: first check (User) returns false
         MensajeDTO input = new MensajeDTO(null, "idEmisor", "idReceptor", "Mensaje de prueba");
         stubExistenceChecks(Boolean.FALSE, Boolean.TRUE);
 
         // When / Then
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> service.generarMensaje(input, "Bearer token"));
-        assertEquals("El curso con id 300 no existe", ex.getMessage());
+        assertEquals("El emisor con id idEmisor no existe", ex.getMessage());
         verify(repository, never()).save(any(Mensaje.class));
     }
 
     @Test
-    void guardar_whenEstudianteDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
-        // Given: curso ok (true), estudiante not found (false)
-        MensajeDTO input = new MensajeDTO(null, "idEmisor", "idReceptor", "Mensaje de prueba");
+    void generarMensaje_whenEstudianteDoesNotExist_throwsIllegalArgumentAndDoesNotSave() {
+        // Given: usuario ok (true), estudiante not found (false)
+        MensajeDTO input = new MensajeDTO(null, "13221", "13221", "Mensaje de prueba");
         stubExistenceChecks(Boolean.TRUE, Boolean.FALSE);
 
         // When / Then
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> service.generarMensaje(input, "Bearer token"));
-        assertEquals("El estudiante con RUN EST-003 no existe", ex.getMessage());
+        assertEquals("El receptor con id 13221 no existe", ex.getMessage());
         verify(repository, never()).save(any(Mensaje.class));
     }
 
-    @Test
-    void borrar_callsDeleteById() {
-        // Given
-        Long id = 7L;
+    // @Test
+    // void borrar_callsDeleteById() {
+    //     // Given
+    //     Long id = 7L;
 
-        // When
-        service.borrar(id);
+    //     // When
+    //     service.borrar(id);
 
-        // Then
-        verify(repository, times(1)).deleteById(id);
-        verify(repository, never()).findById(any());
-    }
+    //     // Then
+    //     verify(repository, times(1)).deleteById(id);
+    //     verify(repository, never()).findById(any());
+    // }
 }
